@@ -1,4 +1,4 @@
-export const VERSION = '1.0.2';
+export const VERSION = '1.0.3';
 export const DEFAULT_START = '2026-10-22';
 export const DEFAULT_QUIT = '2026-10-29';
 export const WEEKS = 12;
