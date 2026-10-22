@@ -1,10 +1,123 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {IDBFactory} from 'fake-indexeddb';
-import {createRepository,LocalConflictError} from '../src/store.js';import {fixture,withDay} from './fixtures.mjs';
-function setup(){const idb=new IDBFactory(),values=new Map(),ls={getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v)};return {idb,ls,repo:createRepository({indexedDB:idb,localStorage:ls})}}
-test('loads exact legacy state and preserves state keys in atomic sync metadata updates',async()=>{const {repo}=setup();await repo.load();await repo.save(withDay(fixture()));const {state,meta}=await repo.readSync();assert.equal(meta.generation,1);await repo.updateSync(meta.localRevision,{meta:{enabled:true},snapshot:{label:'before-migration',state}});assert.deepEqual(await repo.load(),state);assert.equal((await repo.listSnapshots()).length,1);assert.equal((await repo.readSync()).meta.enabled,true);assert.equal(state.sync,undefined)});
-test('rejects stale-tab writes and retains the candidate draft',async()=>{const {repo,idb,ls}=setup();await repo.load();const tab=createRepository({indexedDB:idb,localStorage:ls});await tab.load();await repo.save(withDay(fixture(),undefined,'winner'));await assert.rejects(tab.save(withDay(fixture(),undefined,'draft')),LocalConflictError);assert.equal((await repo.readSync()).state.logs['2026-10-22'].notes,'winner');const snapshots=await repo.listSnapshots();assert.equal((await repo.readSnapshot(snapshots[0].key)).state.logs['2026-10-22'].notes,'draft')});
-test('slow remote transaction cannot overwrite newer local edit',async()=>{const {repo}=setup();await repo.load();const {meta}=await repo.readSync();await repo.save(withDay(fixture()));await assert.rejects(repo.updateSync(meta.localRevision,{state:fixture()}),LocalConflictError);assert.ok((await repo.readSync()).state.logs['2026-10-22'])});
-test('transactional sync unavailable in localStorage fallback, local records remain exportable',async()=>{const {ls}=setup();const repo=createRepository({indexedDB:{open(){throw Error('denied')}},localStorage:ls});assert.equal(await repo.load(),undefined);await repo.save(withDay(fixture()));assert.equal((await repo.load()).logs['2026-10-22'].complete,true);await assert.rejects(repo.readSync(),/IndexedDB/)});
-test('corrupt original data is retained for recovery rather than replaced by empty state',async()=>{const {idb,repo}=setup();await new Promise((resolve,reject)=>{const r=idb.open('quit365-local-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>{const db=r.result,tx=db.transaction('kv','readwrite');tx.objectStore('kv').put({broken:'ORIGINAL'},'state');tx.oncomplete=()=>{db.close();resolve()}};r.onerror=reject});await assert.rejects(repo.load(),e=>e.raw?.broken==='ORIGINAL');await assert.rejects(repo.save(fixture()),/恢复/)});
-test('explicit recovery preserves corrupt original as snapshot and resets cloud consent',async()=>{const {repo,idb}=setup();await new Promise(resolve=>{const r=idb.open('quit365-local-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>{const db=r.result,tx=db.transaction('kv','readwrite');tx.objectStore('kv').put({broken:'KEEP'},'state');tx.oncomplete=()=>{db.close();resolve()}}});await assert.rejects(repo.load());await repo.restore(withDay(fixture()));assert.equal((await repo.load()).logs['2026-10-22'].complete,true);const snap=await repo.listSnapshots();assert.equal((await repo.readSnapshot(snap[0].key)).state.broken,'KEEP');assert.equal((await repo.readSync()).meta.enabled,false)});
-test('missing state alongside existing sync metadata is recovery, never a fresh empty journal',async()=>{const {repo,idb}=setup();await repo.load();await repo.save(withDay(fixture()));await new Promise(resolve=>{const r=idb.open('quit365-local-v1',1);r.onsuccess=()=>{const db=r.result,tx=db.transaction('kv','readwrite');tx.objectStore('kv').delete('state');tx.oncomplete=()=>{db.close();resolve()}}});await assert.rejects(repo.load(),e=>e instanceof Error&&e.name==='RecoveryError');await assert.rejects(repo.save(fixture()),/恢复/)});
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { IDBFactory } from 'fake-indexeddb';
+import { createRepository, LocalConflictError } from '../src/store.js';
+import { fixture, withDay } from './fixtures.mjs';
+function setup() {
+  const idb = new IDBFactory(),
+    values = new Map(),
+    ls = { getItem: (k) => values.get(k) || null, setItem: (k, v) => values.set(k, v) };
+  return { idb, ls, repo: createRepository({ indexedDB: idb, localStorage: ls }) };
+}
+test('loads exact legacy state and preserves state keys in atomic sync metadata updates', async () => {
+  const { repo } = setup();
+  await repo.load();
+  await repo.save(withDay(fixture()));
+  const { state, meta } = await repo.readSync();
+  assert.equal(meta.generation, 1);
+  await repo.updateSync(meta.localRevision, {
+    meta: { enabled: true },
+    snapshot: { label: 'before-migration', state }
+  });
+  assert.deepEqual(await repo.load(), state);
+  assert.equal((await repo.listSnapshots()).length, 1);
+  assert.equal((await repo.readSync()).meta.enabled, true);
+  assert.equal(state.sync, undefined);
+});
+test('rejects stale-tab writes and retains the candidate draft', async () => {
+  const { repo, idb, ls } = setup();
+  await repo.load();
+  const tab = createRepository({ indexedDB: idb, localStorage: ls });
+  await tab.load();
+  await repo.save(withDay(fixture(), undefined, 'winner'));
+  await assert.rejects(tab.save(withDay(fixture(), undefined, 'draft')), LocalConflictError);
+  assert.equal((await repo.readSync()).state.logs['2026-10-22'].notes, 'winner');
+  const snapshots = await repo.listSnapshots();
+  assert.equal((await repo.readSnapshot(snapshots[0].key)).state.logs['2026-10-22'].notes, 'draft');
+});
+test('slow remote transaction cannot overwrite newer local edit', async () => {
+  const { repo } = setup();
+  await repo.load();
+  const { meta } = await repo.readSync();
+  await repo.save(withDay(fixture()));
+  await assert.rejects(
+    repo.updateSync(meta.localRevision, { state: fixture() }),
+    LocalConflictError
+  );
+  assert.ok((await repo.readSync()).state.logs['2026-10-22']);
+});
+test('transactional sync unavailable in localStorage fallback, local records remain exportable', async () => {
+  const { ls } = setup();
+  const repo = createRepository({
+    indexedDB: {
+      open() {
+        throw Error('denied');
+      }
+    },
+    localStorage: ls
+  });
+  assert.equal(await repo.load(), undefined);
+  await repo.save(withDay(fixture()));
+  assert.equal((await repo.load()).logs['2026-10-22'].complete, true);
+  await assert.rejects(repo.readSync(), /IndexedDB/);
+});
+test('corrupt original data is retained for recovery rather than replaced by empty state', async () => {
+  const { idb, repo } = setup();
+  await new Promise((resolve, reject) => {
+    const r = idb.open('quit365-local-v1', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => {
+      const db = r.result,
+        tx = db.transaction('kv', 'readwrite');
+      tx.objectStore('kv').put({ broken: 'ORIGINAL' }, 'state');
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+    };
+    r.onerror = reject;
+  });
+  await assert.rejects(repo.load(), (e) => e.raw?.broken === 'ORIGINAL');
+  await assert.rejects(repo.save(fixture()), /恢复/);
+});
+test('explicit recovery preserves corrupt original as snapshot and resets cloud consent', async () => {
+  const { repo, idb } = setup();
+  await new Promise((resolve) => {
+    const r = idb.open('quit365-local-v1', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => {
+      const db = r.result,
+        tx = db.transaction('kv', 'readwrite');
+      tx.objectStore('kv').put({ broken: 'KEEP' }, 'state');
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+    };
+  });
+  await assert.rejects(repo.load());
+  await repo.restore(withDay(fixture()));
+  assert.equal((await repo.load()).logs['2026-10-22'].complete, true);
+  const snap = await repo.listSnapshots();
+  assert.equal((await repo.readSnapshot(snap[0].key)).state.broken, 'KEEP');
+  assert.equal((await repo.readSync()).meta.enabled, false);
+});
+test('missing state alongside existing sync metadata is recovery, never a fresh empty journal', async () => {
+  const { repo, idb } = setup();
+  await repo.load();
+  await repo.save(withDay(fixture()));
+  await new Promise((resolve) => {
+    const r = idb.open('quit365-local-v1', 1);
+    r.onsuccess = () => {
+      const db = r.result,
+        tx = db.transaction('kv', 'readwrite');
+      tx.objectStore('kv').delete('state');
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+    };
+  });
+  await assert.rejects(repo.load(), (e) => e instanceof Error && e.name === 'RecoveryError');
+  await assert.rejects(repo.save(fixture()), /恢复/);
+});

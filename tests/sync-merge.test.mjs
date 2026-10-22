@@ -1,7 +1,54 @@
-import test from 'node:test';import assert from 'node:assert/strict';
-import {mergeStates,resolveMerge} from '../src/sync-merge.js';import {fixture,withDay} from './fixtures.mjs';
-test('merges different dates without modifying its inputs',()=>{const b=fixture(),l=withDay(b),r=withDay(b,'2026-10-23');const m=mergeStates(b,l,r);assert.equal(m.conflicts.length,0);assert.deepEqual(Object.keys(m.state.logs).sort(),['2026-10-22','2026-10-23']);assert.deepEqual(b.logs,{});assert.equal(Object.keys(l.logs).length,1)});
-test('same date requires explicit conflict selection',()=>{const b=withDay(fixture()),m=mergeStates(b,withDay(b,undefined,'A'),withDay(b,undefined,'B'));assert.equal(m.conflicts[0].path,'logs.2026-10-22');assert.throws(()=>resolveMerge(m,{}));assert.equal(resolveMerge(m,{'logs.2026-10-22':'remote'}).logs['2026-10-22'].notes,'B')});
-test('deletion versus edit conflicts; acknowledged deletion can propagate',()=>{const b=withDay(fixture()),l=fixture(),r=withDay(b,undefined,'remote');assert.equal(mergeStates(b,l,r).conflicts.length,1);assert.deepEqual(mergeStates(b,l,b).state.logs,{})});
-test('settings are atomic, including during migration with no common base',()=>{const b=fixture(),l=fixture(),r=fixture();l.settings.amTime='09:00';r.settings.pmTime='20:00';assert.equal(mergeStates(b,l,r).conflicts[0].path,'settings');assert.equal(mergeStates(null,l,r).conflicts[0].path,'settings')});
-test('identical edits and duplicate legacy urge imports do not double count',()=>{const b=fixture(),l=withDay(b);l.urges=[{date:'2026-10-22',at:'2026-10-22T00:00:00.000Z',type:'coping-session'}];const m=mergeStates(b,l,structuredClone(l));assert.equal(m.conflicts.length,0);assert.equal(m.state.urges.length,1)});
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mergeStates, resolveMerge } from '../src/sync-merge.js';
+import { fixture, withDay } from './fixtures.mjs';
+test('merges different dates without modifying its inputs', () => {
+  const b = fixture(),
+    l = withDay(b),
+    r = withDay(b, '2026-10-23');
+  const m = mergeStates(b, l, r);
+  assert.equal(m.conflicts.length, 0);
+  assert.deepEqual(Object.keys(m.state.logs).sort(), ['2026-10-22', '2026-10-23']);
+  assert.deepEqual(b.logs, {});
+  assert.equal(Object.keys(l.logs).length, 1);
+});
+test('same date requires explicit conflict selection', () => {
+  const b = withDay(fixture()),
+    m = mergeStates(b, withDay(b, undefined, 'A'), withDay(b, undefined, 'B'));
+  assert.equal(m.conflicts[0].path, 'logs.2026-10-22');
+  assert.throws(() => resolveMerge(m, {}));
+  assert.equal(resolveMerge(m, { 'logs.2026-10-22': 'remote' }).logs['2026-10-22'].notes, 'B');
+});
+test('deletion versus edit conflicts; acknowledged deletion can propagate', () => {
+  const b = withDay(fixture()),
+    l = fixture(),
+    r = withDay(b, undefined, 'remote');
+  assert.equal(mergeStates(b, l, r).conflicts.length, 1);
+  assert.deepEqual(mergeStates(b, l, b).state.logs, {});
+});
+test('settings are atomic, including during migration with no common base', () => {
+  const b = fixture(),
+    l = fixture(),
+    r = fixture();
+  l.settings.amTime = '09:00';
+  r.settings.pmTime = '20:00';
+  assert.equal(mergeStates(b, l, r).conflicts[0].path, 'settings');
+  assert.equal(mergeStates(null, l, r).conflicts[0].path, 'settings');
+});
+test('identical edits and duplicate legacy urge imports do not double count', () => {
+  const b = fixture(),
+    l = withDay(b);
+  l.urges = [{ date: '2026-10-22', at: '2026-10-22T00:00:00.000Z', type: 'coping-session' }];
+  const m = mergeStates(b, l, structuredClone(l));
+  assert.equal(m.conflicts.length, 0);
+  assert.equal(m.state.urges.length, 1);
+});
+test('legacy duplicate IDs matching object prototype names never collapse separate events', () => {
+  const b = fixture(),
+    l = fixture();
+  l.urges = [
+    { id: '__proto__', date: '2026-10-22', at: '2026-10-22T01:00:00.000Z', type: 'coping-session' },
+    { id: '__proto__', date: '2026-10-22', at: '2026-10-22T02:00:00.000Z', type: 'coping-session' }
+  ];
+  assert.equal(mergeStates(b, l, structuredClone(l)).state.urges.length, 2);
+});

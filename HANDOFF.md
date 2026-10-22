@@ -1,3 +1,19 @@
+# QUIT / 365 — V1.1 增量交接
+
+分支：feature/cloud-sync-v1.1。生产main保持V1.0.3。代码与自动化验收完成度见[验收报告](docs/cloud-sync-acceptance.md)，账户授权与发布步骤见[部署文档](docs/cloud-sync-deploy.md)。真实Cloudflare/OAuth及物理iPhone验收仍待用户授权与操作，不得报告为已上线云同步。
+
+新增模块：sync-schema（安全格式）、sync-merge（三方冲突）、store（原数据库事务/快照）、sync-client（认证/同步状态机）、sync-ui（状态/迁移/冲突）、worker/（OAuth、短期会话、限流、私有GitHub SHA写入）。src/logic.js除VERSION外保留医疗计算；每次变更继续跑原7项及新增回归。
+
+数据兼容：数据库quit365-local-v1、kv/state与schemaVersion=1不变；sync-meta及snapshot键仅在本机。不要将sync-meta混入JSON备份（其中可能有短期PKCE verifier）。云端formatVersion=1与医疗数据版本分开；未来版本拒绝写回。新烟瘾应对记录增加可选稳定id，V1.0可忽略；旧记录以稳定旧字段及出现序号比较。
+
+保护约束：先本机落盘再上传；generation避免旧ACK确认新编辑；inFlight识别上传成功回包丢失；syncEpoch防止清空/断开后旧请求重启同步；同日/settings冲突不按时间戳猜优先级。本机失败、缺state但有metadata、损坏状态均须保留恢复路径，不能初始化空库并上传。
+
+仅本地模式保留localStorage备用；此时不具备IndexedDB事务保证，云同步暂停。导入/清空先留本机快照并停止同步。读取远端不得直接覆盖正在输入的内存草稿；app接收回包时仍作三方比较。
+
+Worker所有读写须认证；固定数字ID289706800、private数据仓库与路径；fine-grained PAT只选数据仓库，放Cloudflare Secrets。Pages静态发布根目录中的文件均视为公开，即使文件夹名叫worker也不能放Secrets。CF观测日志关闭，不打印健康payload、OAuth code或token。
+
+以下保留原交接规则与数据格式；V1.1能力以本节及新增文档为准。
+
 # QUIT / 365 — V1.0 项目交接与验收
 
 ## 产品决策

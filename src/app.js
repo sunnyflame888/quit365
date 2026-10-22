@@ -79,7 +79,7 @@ async function act(name, el){
  case 'close-rescue':closeRescue();break;
  case 'toggle-timer':startTimer();break;
  case 'reset-timer':rescueActive=false;clearInterval(tickHandle);countdown=600;rescueModalRender();break;
- case 'complete-rescue':state.urges.push({date:localToday(),at:new Date().toISOString(),type:'coping-session'});if(!await persist())break;closeRescue();toast('已记录这次应对，做得好：继续保持不使用烟草。');break;
+ case 'complete-rescue':state.urges.push({id:crypto.randomUUID(),date:localToday(),at:new Date().toISOString(),type:'coping-session'});if(!await persist())break;closeRescue();toast('已记录这次应对，做得好：继续保持不使用烟草。');break;
  case 'save-log':if(await persist()){toast('今天的内容已保存到当前设备');render();}break;
  case 'csv':download(`quit365-logs-${localToday()}.csv`,'\ufeff'+exportCsv(state.logs),'text/csv;charset=utf-8');toast('日志CSV已导出（文件未加密）');break;
  case 'export':if(recoveryIssue){download('quit365-recovery-raw.json',JSON.stringify(recoveryIssue.raw,null,2),'application/json');toast('原始待恢复数据已导出，请私密保存');break;}await persist();download(`quit365-backup-${localToday()}.json`,JSON.stringify(state,null,2),'application/json;charset=utf-8');toast('JSON备份已导出（文件未加密）');break;
