@@ -2,7 +2,9 @@
 
 分支：feature/cloud-sync-v1.1；[Draft PR #1](https://github.com/sunnyflame888/quit365/pull/1)。生产main保持V1.0.3。代码与自动化验收完成度见[验收报告](docs/cloud-sync-acceptance.md)，账户授权与发布步骤见[部署文档](docs/cloud-sync-deploy.md)。Worker已部署，OAuth App及两项加密Secrets已配置，真实未登录拦截/OAuth启动通过；完整登录、私有数据读写和物理iPhone验收仍待完成，不得报告为已上线云同步。
 
-当前Worker固定回跳HTTPS预览quit365-preview.pages.dev，ALLOW_LOCAL_DEV=false；源码Wrangler默认APP仍为正式Pages，普通deploy会覆盖预览值。Pages预览只发布14个静态资源，ZIP在/private/tmp/quit365-v11-https-preview.zip，文件上传待本人完成；正式SYNC_API_URL仍空。PAT在2026-11-21到期，轮换时仍仅数据仓库Contents读写。
+当前Worker固定回跳HTTPS预览quit365-preview.pages.dev，ALLOW_LOCAL_DEV=false；源码Wrangler默认APP仍为正式Pages，普通deploy会覆盖预览值。本人已完成Pages预览上传，14个静态资源均200且与准备包逐字节一致；正式SYNC_API_URL仍空。PAT在2026-11-21到期，轮换时仍仅数据仓库Contents读写。
+
+真实GitHub授权页面确认仅公开身份数据，回跳到预览成功；交换返回503。实际workerd复现不支持redirect:error及成员函数方式调用原生fetch的Illegal invocation。worker/api.js和github.js已修正为manual且拒绝非2xx、无接收者调用fetch；新增实际workerd完整OAuth/私有读写/拒绝上游跳转回归先失败再通过，npm test为59/59。修复尚未部署：Cloudflare控制台代码编辑器持续加载；此前默认CLI广权限重新授权被自动审查拒绝，未绕过。已请求仅account:read和workers_scripts:write的明确授权，未收到答复前不得启动该授权。
 
 新增模块：sync-schema（安全格式）、sync-merge（三方冲突）、store（原数据库事务/快照）、sync-client（认证/同步状态机）、sync-ui（状态/迁移/冲突）、worker/（OAuth、短期会话、限流、私有GitHub SHA写入）。src/logic.js除VERSION外保留医疗计算；每次变更继续跑原7项及新增回归。
 

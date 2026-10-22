@@ -7,7 +7,7 @@
 - 源码仓库：[quit365](https://github.com/sunnyflame888/quit365)，公开。
 - 数据仓库：[quit365-data](https://github.com/sunnyflame888/quit365-data)，已创建为 **Private**，main仅初始化README；Pages未启用（API返回404）。
 - Cloudflare登录已验证，Worker已部署为 [quit365-sync.quit-365.workers.dev](https://quit365-sync.quit-365.workers.dev)。GitHub OAuth App已创建，两项秘密已通过控制台分别以Secret类型保存；公开Client ID已配置。真实未登录GET/PUT返回401，伪造会话401，非允许来源403；OAuth入口200、固定回调、S256、空scope已核对。完整登录交换和数据同步仍待验收。
-- 独立预览项目quit365-preview已创建，静态资源包只含14个公开前端文件，尚待完成文件上传及HTTPS页面验证，不能据此宣称预览已上线。Worker临时使用 `https://quit365-preview.pages.dev/` 作为固定非生产回跳地址，localhost例外关闭；仓库配置保留正式Pages默认值。前端 `src/sync-config.js` 的URL仍为空，生产main未改变。
+- 独立预览[quit365-preview](https://quit365-preview.pages.dev/)已由本人完成上传。首页和全部14个公开前端文件均200，内容与准备包逐字节一致。真实GitHub仅公开数据授权及回跳已执行；交换阶段503，实际workerd复现为redirect:error和原生fetch调用绑定不兼容。修复与59项回归已通过，待部署后重试，尚未写入任何云端日志。Worker临时使用该预览作为固定回跳地址，localhost例外关闭；仓库配置保留正式Pages默认值。前端 `src/sync-config.js` 的URL仍为空，生产main未改变。
 - 本文命令中的Secrets均通过交互提示输入，不把值写进命令、聊天、源码或终端历史。不要用当前gh CLI的广权限token作为Worker凭据。
 
 ## 1. 本机验证
@@ -109,7 +109,7 @@ iPhone真机预生产验收需要可访问的HTTPS预览前端；localhost预览
 
 当前独立HTTPS预览采用Cloudflare Pages直接上传，仅作为非生产验收，不替换GitHub Pages。上传包为 `/private/tmp/quit365-v11-https-preview.zip`：index.html在根，只有styles.css、manifest、sw.js、src的8个模块及2个图标，共14文件；没有Git、文档、测试、Worker代码或Secret。副本中API指向上述Worker，缓存版本为preview1，正式源码API仍关闭。通过控制台上传并部署后，必须先验证首页200、无追踪脚本、静态离线和OAuth，再给iPhone录入合成数据验收。
 
-本次CLI重新授权尝试被自动审批拒绝（默认请求了广泛Cloudflare持久写权限）。已改用原有登录的控制台配置Secret，不申请这组新权限。浏览器扩展自动上传要求file URL访问权限，尚未扩权；系统文件选择器自动控制未成功，因此保留上传页供本人选择上述单一公开资源ZIP。
+本次CLI重新授权尝试被自动审批拒绝（默认请求了广泛Cloudflare持久写权限）。已改用原有登录的控制台配置Secret，没有申请这组默认权限。浏览器扩展未扩大file URL访问权限，公开ZIP已由本人手动上传。控制台代码编辑器持续加载，运行时修复待部署；已请求明确授权，仅使用account:read和workers_scripts:write重新授权，不申请Pages、KV、D1或Secrets Store等独立范围。未获答复前不启动此授权。
 
 ## 7. 前端启用与生产切换
 

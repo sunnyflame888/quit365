@@ -14,7 +14,7 @@ function decode(text) {
 export class GithubData {
   constructor(env, { fetch: upstreamFetch = globalThis.fetch } = {}) {
     this.env = env;
-    this.fetch = upstreamFetch;
+    this.fetch = (...args) => upstreamFetch(...args);
   }
   async call(path, init = {}) {
     const e = this.env;
@@ -28,7 +28,7 @@ export class GithubData {
     );
     return this.fetch('https://api.github.com/repos/' + e.DATA_OWNER + '/' + e.DATA_REPO + path, {
       ...init,
-      redirect: 'error',
+      redirect: 'manual',
       headers: {
         Authorization: 'Bearer ' + e.GITHUB_DATA_TOKEN,
         Accept: 'application/vnd.github+json',

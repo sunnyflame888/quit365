@@ -72,7 +72,7 @@ export function createHandler({ fetch: upstreamFetch = globalThis.fetch } = {}) 
       return b;
     }
     async function github(url, init) {
-      const r = await upstreamFetch(url, { ...init, redirect: 'error' });
+      const r = await upstreamFetch(url, { ...init, redirect: 'manual' });
       if (!r.ok) throw new ApiError(502, 'GITHUB_AUTH_UNAVAILABLE');
       return r;
     }
@@ -200,7 +200,7 @@ export function createHandler({ fetch: upstreamFetch = globalThis.fetch } = {}) 
                   '/token',
                 {
                   method: 'DELETE',
-                  redirect: 'error',
+                  redirect: 'manual',
                   headers: {
                     Authorization:
                       'Basic ' + btoa(env.GITHUB_CLIENT_ID + ':' + env.GITHUB_CLIENT_SECRET),

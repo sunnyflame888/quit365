@@ -74,7 +74,6 @@ test('GitHub SHA conflict never triggers an unconditional overwrite', async () =
   const puts = calls.filter((c) => c.opts.method === 'PUT');
   assert.equal(puts.length, 1);
   assert.equal(JSON.parse(puts[0].opts.body).sha, 'a'.repeat(40));
-  assert.equal(puts[0].opts.redirect, 'error');
 });
 test('no missing-file fallback when repository permission check fails', async () => {
   const data = new GithubData(env, {

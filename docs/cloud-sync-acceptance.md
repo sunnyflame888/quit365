@@ -4,13 +4,13 @@
 
 ## 已取得的证据
 
-- 最终本机 `npm test`：**58/58通过**；Worker dry-run、`git diff --check`及公开源文件凭据/备份名称扫描通过（43个文件）。扫描有已说明的模式覆盖限制。
+- 最终本机 `npm test`：**59/59通过**；Worker dry-run、`git diff --check`及公开源文件凭据/备份名称扫描通过（43个文件）。扫描有已说明的模式覆盖限制。
 - 原7项日期、剂量、无烟统计、CSV防注入与备份校验测试保留。
 - Node自动化覆盖同步文档与格式拒绝、三方合并、同日/settings/删除冲突、原数据库兼容、跨标签旧写入草稿、损坏数据恢复、缺失state但仍有metadata、localStorage降级停同步。
 - 两个实际fake-indexeddb仓库＋条件写网络替身验证：首次迁移需确认、不同日期合并、同日冲突停止写入、离线重开/恢复、上传途中编辑、丢失成功回包、慢GET、关闭同步后迟到的迁移回包。
 - Worker自动化验证未登录拒绝、Origin伪造无法绕过、PKCE/state/ticket重放、并发兑换单次消费、错误GitHub用户拒绝、会话到期/退出、限流、public仓库拒绝、GitHub SHA冲突不无条件覆盖、repo权限失败不冒充空库、意外repo OAuth scope撤销、固定预览回跳边界。
 - 真实Miniflare/workerd SQLite Durable Object测试：并发回调只有一个成功；未登录数据接口401。此测试未连接真实GitHub，不能替代实际仓库并发联调。
-- Wrangler dry-run成功，平台绑定/SQLite迁移可打包；没有部署Cloudflare公网资源。
+- Wrangler dry-run成功，平台绑定/SQLite迁移可打包；后续已部署的真实资源状态见下文，不把dry-run视为公网验收。
 - Chromium、WebKit各35个页面/尺寸组合通过，覆盖320、375、390、420、430、768、1440px及五个页面，保留日期输入边界和图表刻度间距。
 - 两浏览器上下文测试通过：显式迁移→另一设备下载→同日编辑冲突→明确选择→刷新保留；JSON/CSV和AES-GCM备份往返、安全备注渲染、Safari/PWA授权片段回退、静态离线缓存。
 - 同一浏览器内两个标签共享IndexedDB的回归通过；无变化同步及远端数据变化后的同步都保留未保存设置/医嘱表单；迁移和冲突选择保持焦点时，旧界面确认不会应用后台更新的新版本。Chromium、WebKit均通过。
@@ -19,6 +19,7 @@
 - 账户本人完成Cloudflare登录后，已实际部署Worker并绑定SQLite AuthState；当前配置尚未完成。真实HTTPS的GET /v1/session、GET /v1/state、PUT /v1/state及POST /auth/start均返回503 CONFIGURATION_REQUIRED和Cache-Control:no-store，拒绝未配置服务的数据访问。这只证明配置阶段拒绝访问，不等同于完成真实OAuth/会话鉴权验收。
 - 后续完成OAuth App创建及两项Cloudflare加密Secret后，真实未登录GET session/state、PUT state均401；伪造会话401 SESSION_EXPIRED；非允许来源403，允许来源预检204。真实POST /auth/start为200，核对GitHub域、公开Client ID、精确callback、S256和空scope；未输出state/verifier。完整OAuth交换及私有数据读写仍未执行。
 - GitHub最终凭据确认：仅quit365-data，Contents读写和Metadata只读，2026-11-21到期；Cloudflare界面两项均为Secret/加密值。没有用gh的广权限token作为运行凭据。
+- 本人上传后，HTTPS预览首页与全部14个静态资源均200，逐字节匹配准备包。真实GitHub授权页仅公开数据，正确账户授权回跳成功，交换阶段503；未上传任何日志。实际workerd复现redirect:error不支持、成员方式调用原生fetch的Illegal invocation。修复采用manual并由非2xx检查拒绝跳转、无接收者调用fetch；新增运行时测试完成合成OAuth/私有仓库读写/上游302拒绝，先失败再通过。修复待部署，真实交换不记为通过。
 
 复现命令见[部署文档](cloud-sync-deploy.md)。浏览器测试通过route替身模拟API，不证明外部GitHub/Cloudflare可用性；WebKit引擎测试不证明物理iPhone上的所有行为。
 
@@ -69,7 +70,7 @@
 - [ ] 首次迁移预览和本机快照可导出；发生同日或settings差异需明确选择。
 - [ ] 用户审阅PR并批准生产切换后，再完成本人实际设备最终验收。
 
-当前待办依据：Worker与OAuth/Secret已配置；HTTPS静态预览项目和公开资源包已准备，但上传、完整OAuth登录、私有仓库合成记录联调及物理iPhone验收未完成。因此不能把V1.1目标标记全部完成。代码提交bfd6fcb的分支和PR两轮GitHub Actions均已成功。
+当前待办依据：Worker与OAuth/Secret已配置，HTTPS静态预览已上线；真实登录遇到的两项运行时兼容问题已修复并通过59项测试，但控制台编辑器加载受阻，修复部署/完整OAuth交换、私有仓库合成记录联调及物理iPhone验收尚未完成。因此不能把V1.1目标标记全部完成。提交8d142a8的分支和PR两轮GitHub Actions均已成功；本次修复另行运行CI。
 
 ## 迁移流程
 
