@@ -5,9 +5,9 @@
 ## 当前外部状态
 
 - 源码仓库：[quit365](https://github.com/sunnyflame888/quit365)，公开。
-- 数据仓库：[quit365-data](https://github.com/sunnyflame888/quit365-data)，**Private**；main含README与`data/state.json`的2天合成验收记录，备注均为SYNTHETIC；Pages未启用。没有上传本人健康日志。
+- 数据仓库：[quit365-data](https://github.com/sunnyflame888/quit365-data)，**Private**；main含README与`data/state.json`的2天合成验收记录（SYNTHETIC/设备测试标记）；Pages未启用。没有上传原生产站健康日志。
 - Cloudflare登录已验证，Worker已部署为 [quit365-sync.quit-365.workers.dev](https://quit365-sync.quit-365.workers.dev)。GitHub OAuth App已创建，两项秘密均以Secret类型保存；公开Client ID已配置。真实未登录GET/PUT返回401，伪造会话401，非允许来源403；OAuth入口、完整正确账户交换及桌面合成数据同步通过。固定callback、S256和空scope已核对。
-- 独立预览[quit365-preview](https://quit365-preview.pages.dev/)已由本人上传。首页和全部14个公开前端文件均200且逐字节一致。最初OAuth交换503的workerd兼容问题已修复，控制台零诊断后部署Worker版本10d5299b；60项自动测试通过。真实桌面Chrome登录/私有读写/不同日期合并/同日冲突及明确选择通过，物理iPhone仍待本人验证。Worker固定回跳该预览，localhost例外关闭；仓库配置保留正式Pages默认值。前端 `src/sync-config.js` 的URL仍为空，生产main未改变。
+- 独立预览[quit365-preview](https://quit365-preview.pages.dev/)首页及14个资源均200并核对内容；Worker修复已部署为10d5299b，60项测试通过。真实登录/私有读写/合并/冲突选择及iPhone→电脑标记同步通过。主屏幕与真机离线验证按用户要求跳过。Worker固定回跳预览、关闭localhost例外；源码Wrangler保留正式Pages默认值。前端 `src/sync-config.js` 的URL仍为空，生产main未改变。
 - 本文命令中的Secrets均通过交互提示输入，不把值写进命令、聊天、源码或终端历史。不要用当前gh CLI的广权限token作为Worker凭据。
 
 ## 1. 本机验证

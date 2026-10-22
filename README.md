@@ -2,7 +2,7 @@
 
 当前feature分支增加可选跨设备同步；生产GitHub Pages仍为V1.0.3，PR未经用户批准不会合并。默认云同步关闭，现有本地记录、治疗逻辑与PWA保留。
 
-Worker及GitHub OAuth/Cloudflare Secrets已配置，[非生产预览](https://quit365-preview.pages.dev/)已部署并核对全部14个静态资源。Worker运行时修复已部署，60项测试通过；桌面Chrome真实登录、私有记录上传/下载及受控并发冲突处理通过，物理iPhone验收仍待本人完成。当前前端默认API为空，不会因后台已配置而自动上传原日志。
+Worker及GitHub OAuth/Cloudflare Secrets已配置，[非生产预览](https://quit365-preview.pages.dev/)已部署并核对全部14个静态资源。60项测试通过；真实登录、私有读写、合并/冲突处理及iPhone→电脑同步通过。主屏幕与真机离线验证按用户要求跳过。当前前端默认API为空，生产main保持原版；正式切换步骤见部署文档。
 
 - [部署与GitHub/Cloudflare授权步骤](docs/cloud-sync-deploy.md)
 - [验收证据、安全边界、迁移和回滚](docs/cloud-sync-acceptance.md)

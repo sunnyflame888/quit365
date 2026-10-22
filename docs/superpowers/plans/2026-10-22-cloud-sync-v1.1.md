@@ -154,7 +154,7 @@
 - [x] **Step 1:** Create/check private `quit365-data` through authenticatedgh, verifyvisibility and Pagesdisabled; seed only documentation or synthetictestdata, never existinguserdata. Do not use broad CLI token as Workersecret.
 - [x] **Step 2:** Run complete node/Worker/runtime/browser suite. Conduct independent review against approvedspec and ReviewFocus; fix findings with failingregressiontests. Record actualchecks and remaininglimits, including same-originPages trust and Gitplaintext history.
 - [x] **Step 3:** Write exactmanual GitHubOAuthApp, minimumPAT, Cloudflarebinding/Secret and nonproductionWorker configsteps; distinguishpublicconfig fromSecrets; rotation/emergencyrevoke, storagecost/quotas, backupbeforemigration, restore/rollback and no-Pagesdatarepo instructions. Never askuser topasteSecrets intochat.
-- [ ] **Step 4:** With user-provided accountauthorization, test actualOAuth/Worker/privateGit CAS in nonproduction, then physicaliPhoneSafari/PWA and desktopcrossdevice. If unavailable, record explicit pendingcells; keepoverallgoal unachieved rather than invent results.
+- [x] **Step 4:** ActualOAuth/Worker/privateGit conditional writes, merge/conflict and physicaliPhoneSafari→desktop marker verified. On2026-10-22 user explicitly cancelled standalonePWA/physicaloffline validation; those checks remain unverified in acceptance report. No production merge.
 - [x] **Step 5:** Verify no productionchanges and no personaldata/secrets in git/workerdartifacts; commit docs/CI and onlytestedfixes.
 
 ## Task 7: PR与逐项交付审计

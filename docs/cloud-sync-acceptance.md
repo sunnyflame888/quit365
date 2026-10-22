@@ -15,13 +15,15 @@
 - 两浏览器上下文测试通过：显式迁移→另一设备下载→同日编辑冲突→明确选择→刷新保留；JSON/CSV和AES-GCM备份往返、安全备注渲染、Safari/PWA授权片段回退、静态离线缓存。
 - 同一浏览器内两个标签共享IndexedDB的回归通过；无变化同步及远端数据变化后的同步都保留未保存设置/医嘱表单；迁移和冲突选择保持焦点时，旧界面确认不会应用后台更新的新版本。Chromium、WebKit均通过。
 - 所有浏览器数据为合成数据；未访问本人iPhone日志，也未将测试导出或截图写入公开源码仓库。
-- 已创建quit365-data为Private，Pages未启用；main现有README和2天明确标记SYNTHETIC的验收记录，没有本人健康日志。
+- quit365-data为Private、Pages未启用；main现有README和2天合成验收记录，备注为SYNTHETIC或IPHONE TEST，没有原生产站健康日志。
 - 账户本人完成Cloudflare登录后，已实际部署Worker并绑定SQLite AuthState；当前配置尚未完成。真实HTTPS的GET /v1/session、GET /v1/state、PUT /v1/state及POST /auth/start均返回503 CONFIGURATION_REQUIRED和Cache-Control:no-store，拒绝未配置服务的数据访问。这只证明配置阶段拒绝访问，不等同于完成真实OAuth/会话鉴权验收。
 - 完成OAuth App创建及两项Cloudflare加密Secret后的配置阶段：真实未登录GET session/state、PUT state均401；伪造会话401 SESSION_EXPIRED；非允许来源403，允许来源预检204。真实POST /auth/start为200，核对GitHub域、公开Client ID、精确callback、S256和空scope。该阶段未执行完整交换，后续成功的真实交换与数据测试见下文。
 - GitHub最终凭据确认：仅quit365-data，Contents读写和Metadata只读，2026-11-21到期；Cloudflare界面两项均为Secret/加密值。没有用gh的广权限token作为运行凭据。
 - 本人上传后，HTTPS预览首页与全部14个静态资源均200，逐字节匹配准备包。首次真实登录交换503；实际workerd复现redirect:error不支持、成员方式调用原生fetch的Illegal invocation。修复manual并检查非2xx拒绝跳转、无接收者调用fetch；新增实际运行时OAuth/私有读写/上游302拒绝回归先失败再通过。编辑器另两项诊断已清除，修复requireValue丢失Retry-After并补失败回归，URLSearchParams显式序列化。控制台零诊断后已部署10d5299b，真实OAuth交换成功。
 - 真实桌面Chrome：首次同步显示本机1天/云端0天，未确认前无文件；JSON下载实际生成，验证schema1、单日合成备注、不含会话字段。显式迁移后已同步，私有文件实际生成。受控GitHub CLI第二写入者条件新增日期后，Worker下载到本机，数量/备注正确。
 - 真实同日分歧：退出登录后本机继续保存，受控第二写入者以当前SHA修改同一天；重登出现冲突，未选择前云端SHA保持78e2303，明确选择本机后恢复已同步，原远端新增日期保留。该第二写入者为测试脚本，不等同于物理第二台设备。
+- 实际GitHub对已过期SHA的条件写入返回409；没有无条件覆盖。
+- 物理iPhone Safari：用户报告已同步，随后实际云端和电脑界面均检测到IPHONE TEST，确认手机→云端→电脑链路。原生产站日志没有导入。iOS版本未提供。2026-10-22用户明确取消主屏幕与真机离线验证，这两项保留未验证，不冒称通过。
 - HTTPS预览在桌面Chrome的390×844视口检查：日期输入在容器内、页面无横向溢出，进展图文无明显重叠；视口已恢复。此结果不能替代物理iPhone。下载事件等待接口曾超时，但实际文件已生成并另行验证，没有据超时重复下载。
 
 复现命令见[部署文档](cloud-sync-deploy.md)。浏览器测试通过route替身模拟API，不证明外部GitHub/Cloudflare可用性；WebKit引擎测试不证明物理iPhone上的所有行为。
@@ -65,16 +67,17 @@
 - [x] OAuth正确账号完整登录成功，在线退出后界面要求重新登录，本机仍可保存。
 - [ ] 其他真实GitHub账号拒绝及真实会话自然过期（已有错误身份/撤销重用/过期自动化）。
 - [x] 确认fine-grained PAT只选quit365-data、Contents读写；数据仓库Private且无Pages。
-- [ ] Mac或PC保存一条合成每日记录、服药勾选与设置，在另一隔离浏览器打开后可见。
+- [x] 桌面合成日志与iPhone Safari同步，手机编辑标记在云端与电脑均核验到。
+- [ ] 服药勾选与设置的物理跨设备逐字段验收；已有原医学逻辑和同步自动化。
 - [ ] 两端同日同时修改，第二次同步出现冲突，未选择前云端不被静默改写。
 - [ ] 断网录入，刷新/重开后仍在；恢复网络后上传，另一设备可见。
 - [ ] iPhone Safari登录、备份下载/恢复、日期输入、图表与页面布局正常。
-- [ ] iPhone添加主屏幕后单独登录；授权若回Safari，复制ticket回原PWA完成；不假设两者共享存储。
-- [ ] PWA联网预载后离线打开；回前台恢复同步，期间没有记录丢失。
+- [ ] iPhone主屏幕独立登录与授权回跳：用户要求跳过真机验证，已有WebKit/浏览器回退测试。
+- [ ] 真机离线关闭重开与恢复上传：用户要求跳过，已有自动化离线回归。
 - [ ] 首次迁移预览和本机快照可导出；发生同日或settings差异需明确选择。
 - [ ] 用户审阅PR并批准生产切换后，再完成本人实际设备最终验收。
 
-当前待办依据：Worker、OAuth/Secret、HTTPS预览及真实桌面合成联调已通过；本人已收到iPhone Safari登录/下载/编辑测试步骤，尚待结果。物理双设备、Safari/PWA、真实离线及生产切换仍不记为通过，因此不能把V1.1目标标记全部完成。提交ca25466的分支和PR两轮GitHub Actions均已成功；当前后续修复另行运行CI。
+本次PR交付完成：60项自动测试、真实桌面服务及iPhone→电脑同步已验证；主屏幕与真机离线步骤按用户明确要求取消。其余未执行的手工细项保留限制；生产切换遵循原要求另行批准，不在本次PR交付范围内。21158fd的PR工作流已成功；重复push工作流及后续文档提交的自动CI以GitHub页面状态为准。
 
 ## 迁移流程
 
