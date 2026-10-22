@@ -6,7 +6,8 @@
 
 - 源码仓库：[quit365](https://github.com/sunnyflame888/quit365)，公开。
 - 数据仓库：[quit365-data](https://github.com/sunnyflame888/quit365-data)，已创建为 **Private**，main仅初始化README；Pages未启用（API返回404）。
-- 尚无Cloudflare CLI登录、Worker公网部署、真实OAuth App及运行PAT配置。前端 `src/sync-config.js` 的URL默认空，保持本地模式。
+- Cloudflare登录已验证，Worker已部署为 [quit365-sync.quit-365.workers.dev](https://quit365-sync.quit-365.workers.dev)。GitHub OAuth App已创建，两项秘密已通过控制台分别以Secret类型保存；公开Client ID已配置。真实未登录GET/PUT返回401，伪造会话401，非允许来源403；OAuth入口200、固定回调、S256、空scope已核对。完整登录交换和数据同步仍待验收。
+- 独立预览项目quit365-preview已创建，静态资源包只含14个公开前端文件，尚待完成文件上传及HTTPS页面验证，不能据此宣称预览已上线。Worker临时使用 `https://quit365-preview.pages.dev/` 作为固定非生产回跳地址，localhost例外关闭；仓库配置保留正式Pages默认值。前端 `src/sync-config.js` 的URL仍为空，生产main未改变。
 - 本文命令中的Secrets均通过交互提示输入，不把值写进命令、聊天、源码或终端历史。不要用当前gh CLI的广权限token作为Worker凭据。
 
 ## 1. 本机验证
@@ -56,7 +57,7 @@ GitHub → 头像 → Settings → Developer settings → OAuth Apps → New OAu
 
 - Application name：QUIT / 365 Sync。
 - Homepage URL：`https://sunnyflame888.github.io/quit365/`。
-- Authorization callback URL：`https://<实际Worker域>/auth/callback`，必须与WORKER_URL一致。
+- Authorization callback URL：`https://quit365-sync.quit-365.workers.dev/auth/callback`，必须与WORKER_URL一致；不启用通配符。
 - 不需要开启Device Flow。
 
 创建后，Client ID填写到Wrangler vars的GITHUB_CLIENT_ID；Generate a new client secret产生的值只交互写入Cloudflare：
@@ -81,8 +82,9 @@ GitHub → Settings → Developer settings → Personal access tokens → Fine-g
 
 ```bash
 npx wrangler secret put GITHUB_DATA_TOKEN --config worker/wrangler.jsonc
-npx wrangler deploy --config worker/wrangler.jsonc
 ```
+
+随后使用下一节的非生产预览部署命令，避免普通deploy将临时回跳切回正式Pages。当前PAT已生成，只选quit365-data，Contents读写、Metadata只读，30天有效（2026-11-21到期）。GitHub最终确认界面核对为1个仓库/2项权限；Cloudflare两项均显示“加密值”。值只在浏览器配置期间短暂保留内存，保存后清除；没有写入聊天、源码或临时凭据文件。
 
 也可在Cloudflare Dashboard → Workers & Pages → quit365-sync → Settings → Variables and Secrets，将上述两项设为Secret。不要截图、粘贴或导出它们到公开文件。不要把实际值放在项目根目录或worker/的.env、.dev.vars，即使已被gitignore忽略。
 
@@ -90,12 +92,13 @@ npx wrangler deploy --config worker/wrangler.jsonc
 
 本机可以先预览 feature 分支。运行 `npm run dev`，使用 `http://localhost:4173/`；localhost属于安全上下文，可使用IndexedDB/WebCrypto。
 
-在尚未接入生产站的Worker上，临时将公开vars设为：
+在尚未接入生产站的Worker上，用命令覆盖公开vars；不必把localhost提交为正式默认值：
 
-```text
-APP_ORIGIN = http://localhost:4173
-APP_URL = http://localhost:4173/
-ALLOW_LOCAL_DEV = true
+```bash
+npx wrangler deploy --config worker/wrangler.jsonc \
+  --var APP_ORIGIN:http://localhost:4173 \
+  --var APP_URL:http://localhost:4173/ \
+  --var ALLOW_LOCAL_DEV:true
 ```
 
 再次部署Worker；将本分支 `src/sync-config.js` 的公开SYNC_API_URL设为实际Worker origin。GitHub OAuth App的回调仍为Worker HTTPS地址，无需改成localhost。在独立浏览器配置/空本地数据库中只录入合成数据，测试登录、拒绝错误账号、退出、显式迁移及两个浏览器并发编辑。仓库已有真实数据时，不执行自动化修改或清空；先私密备份，再由本人选择手动验收方式。
@@ -103,6 +106,10 @@ ALLOW_LOCAL_DEV = true
 本机预览不会发布main。预验收后在线退出登录，把APP_ORIGIN/APP_URL恢复到正式Pages HTTPS地址，移除ALLOW_LOCAL_DEV或设false，再部署。当前实现也允许管理员声明一个固定的HTTPS预览前端地址；不能由请求参数覆盖它。
 
 iPhone真机预生产验收需要可访问的HTTPS预览前端；localhost预览仅针对运行服务的电脑。若没有单独HTTPS预览，真机验收留在用户明确批准生产切换之后，不能把WebKit自动化写成iPhone真机通过。
+
+当前独立HTTPS预览采用Cloudflare Pages直接上传，仅作为非生产验收，不替换GitHub Pages。上传包为 `/private/tmp/quit365-v11-https-preview.zip`：index.html在根，只有styles.css、manifest、sw.js、src的8个模块及2个图标，共14文件；没有Git、文档、测试、Worker代码或Secret。副本中API指向上述Worker，缓存版本为preview1，正式源码API仍关闭。通过控制台上传并部署后，必须先验证首页200、无追踪脚本、静态离线和OAuth，再给iPhone录入合成数据验收。
+
+本次CLI重新授权尝试被自动审批拒绝（默认请求了广泛Cloudflare持久写权限）。已改用原有登录的控制台配置Secret，不申请这组新权限。浏览器扩展自动上传要求file URL访问权限，尚未扩权；系统文件选择器自动控制未成功，因此保留上传页供本人选择上述单一公开资源ZIP。
 
 ## 7. 前端启用与生产切换
 

@@ -1,6 +1,8 @@
 # QUIT / 365 — V1.1 增量交接
 
-分支：feature/cloud-sync-v1.1。生产main保持V1.0.3。代码与自动化验收完成度见[验收报告](docs/cloud-sync-acceptance.md)，账户授权与发布步骤见[部署文档](docs/cloud-sync-deploy.md)。真实Cloudflare/OAuth及物理iPhone验收仍待用户授权与操作，不得报告为已上线云同步。
+分支：feature/cloud-sync-v1.1；[Draft PR #1](https://github.com/sunnyflame888/quit365/pull/1)。生产main保持V1.0.3。代码与自动化验收完成度见[验收报告](docs/cloud-sync-acceptance.md)，账户授权与发布步骤见[部署文档](docs/cloud-sync-deploy.md)。Worker已部署，OAuth App及两项加密Secrets已配置，真实未登录拦截/OAuth启动通过；完整登录、私有数据读写和物理iPhone验收仍待完成，不得报告为已上线云同步。
+
+当前Worker固定回跳HTTPS预览quit365-preview.pages.dev，ALLOW_LOCAL_DEV=false；源码Wrangler默认APP仍为正式Pages，普通deploy会覆盖预览值。Pages预览只发布14个静态资源，ZIP在/private/tmp/quit365-v11-https-preview.zip，文件上传待本人完成；正式SYNC_API_URL仍空。PAT在2026-11-21到期，轮换时仍仅数据仓库Contents读写。
 
 新增模块：sync-schema（安全格式）、sync-merge（三方冲突）、store（原数据库事务/快照）、sync-client（认证/同步状态机）、sync-ui（状态/迁移/冲突）、worker/（OAuth、短期会话、限流、私有GitHub SHA写入）。src/logic.js除VERSION外保留医疗计算；每次变更继续跑原7项及新增回归。
 

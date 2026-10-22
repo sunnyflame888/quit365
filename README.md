@@ -2,6 +2,8 @@
 
 当前feature分支增加可选跨设备同步；生产GitHub Pages仍为V1.0.3，PR未经用户批准不会合并。默认云同步关闭，现有本地记录、治疗逻辑与PWA保留。
 
+Worker及GitHub OAuth/Cloudflare Secrets已配置，真实未登录接口拦截与OAuth启动通过；完整跨设备同步仍待非生产预览上传和真机验收。当前前端默认API为空，不会因后台已配置而自动上传原日志。
+
 - [部署与GitHub/Cloudflare授权步骤](docs/cloud-sync-deploy.md)
 - [验收证据、安全边界、迁移和回滚](docs/cloud-sync-acceptance.md)
 - [已批准的安全设计](docs/superpowers/specs/2026-10-22-cloud-sync-v1.1-design.md)

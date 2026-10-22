@@ -16,6 +16,9 @@
 - 同一浏览器内两个标签共享IndexedDB的回归通过；无变化同步及远端数据变化后的同步都保留未保存设置/医嘱表单；迁移和冲突选择保持焦点时，旧界面确认不会应用后台更新的新版本。Chromium、WebKit均通过。
 - 所有浏览器数据为合成数据；未访问本人iPhone日志，也未将测试导出或截图写入公开源码仓库。
 - 已创建quit365-data为Private，main有README，Pages API404；未上传健康记录。
+- 账户本人完成Cloudflare登录后，已实际部署Worker并绑定SQLite AuthState；当前配置尚未完成。真实HTTPS的GET /v1/session、GET /v1/state、PUT /v1/state及POST /auth/start均返回503 CONFIGURATION_REQUIRED和Cache-Control:no-store，拒绝未配置服务的数据访问。这只证明配置阶段拒绝访问，不等同于完成真实OAuth/会话鉴权验收。
+- 后续完成OAuth App创建及两项Cloudflare加密Secret后，真实未登录GET session/state、PUT state均401；伪造会话401 SESSION_EXPIRED；非允许来源403，允许来源预检204。真实POST /auth/start为200，核对GitHub域、公开Client ID、精确callback、S256和空scope；未输出state/verifier。完整OAuth交换及私有数据读写仍未执行。
+- GitHub最终凭据确认：仅quit365-data，Contents读写和Metadata只读，2026-11-21到期；Cloudflare界面两项均为Secret/加密值。没有用gh的广权限token作为运行凭据。
 
 复现命令见[部署文档](cloud-sync-deploy.md)。浏览器测试通过route替身模拟API，不证明外部GitHub/Cloudflare可用性；WebKit引擎测试不证明物理iPhone上的所有行为。
 
@@ -40,8 +43,8 @@
 
 | 边界 | 实现/证据 | 限制 |
 | --- | --- | --- |
-| 身份 | GitHub /user数字ID白名单289706800；OAuth PKCE、state及一次性ticket；错误账户测试 | 真实OAuth App尚待配置和本人授权 |
-| 数据凭据 | 前端没有GitHub Token；Worker仅Secret名称；数据仓库固定且每次核对private | PAT最小权限/到期日须由本人在GitHub界面确认 |
+| 身份 | GitHub /user数字ID白名单289706800；OAuth PKCE、state及一次性ticket；错误账户测试；真实OAuth App和启动接口已配置 | 完整真实登录交换尚待预览上传后验证 |
+| 数据凭据 | 前端没有GitHub Token；数据仓库固定且每次核对private；已核对PAT为1仓库/2权限、2026-11-21到期；两项仅Cloudflare加密Secret | 尚未通过真实登录会话验证Worker的数据仓库读写；轮换需保留相同最小权限 |
 | API | 所有数据请求先验证应用会话、ID和限流；CORS不是鉴权 | 服务配置/凭据失效时停止云读写 |
 | 并发 | GitHub内容SHA条件写；客户端三方比较；同日与settings不静默覆盖 | 真实GitHub并发返回尚待授权后联调 |
 | 离线 | 本机事务保存、generation/inFlight/syncEpoch、恢复联网重试 | iOS进程被终止后没有后台上传承诺；等待本机保存提示再离开 |
@@ -54,9 +57,9 @@
 
 账户本人完成[授权与部署](cloud-sync-deploy.md)后逐项勾选，并记录实际设备、系统版本、时间和结果。没有数据备份时不开始迁移。
 
-- [ ] Worker真实HTTPS URL可用；未登录GET/PUT均拒绝，无健康数据响应。
+- [x] Worker真实HTTPS URL可用；未登录GET/PUT均拒绝，无健康数据响应。
 - [ ] OAuth正确账号登录成功，其他GitHub账号被拒绝；退出和过期后均不可读写云端。
-- [ ] 确认fine-grained PAT只选quit365-data、Contents读写；数据仓库Private且无Pages。
+- [x] 确认fine-grained PAT只选quit365-data、Contents读写；数据仓库Private且无Pages。
 - [ ] Mac或PC保存一条合成每日记录、服药勾选与设置，在另一隔离浏览器打开后可见。
 - [ ] 两端同日同时修改，第二次同步出现冲突，未选择前云端不被静默改写。
 - [ ] 断网录入，刷新/重开后仍在；恢复网络后上传，另一设备可见。
@@ -66,7 +69,7 @@
 - [ ] 首次迁移预览和本机快照可导出；发生同日或settings差异需明确选择。
 - [ ] 用户审阅PR并批准生产切换后，再完成本人实际设备最终验收。
 
-当前阻塞依据：`wrangler whoami` 显示未认证；没有已配置OAuth Client ID、Secret或最小权限数据PAT。因此没有真实iPhone/Mac/PC云同步结果，不能把V1.1目标标记全部完成。
+当前待办依据：Worker与OAuth/Secret已配置；HTTPS静态预览项目和公开资源包已准备，但上传、完整OAuth登录、私有仓库合成记录联调及物理iPhone验收未完成。因此不能把V1.1目标标记全部完成。代码提交bfd6fcb的分支和PR两轮GitHub Actions均已成功。
 
 ## 迁移流程
 

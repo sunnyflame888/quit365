@@ -160,8 +160,8 @@
 ## Task 7: PR与逐项交付审计
 
 - [x] **Step 1:** `npm test`, Workerbundle/runtimechecks, browserregressions, `git diff --check`, secret/filelistreview, then inspectfinaldiff against everyrow in spec evidenceledger.
-- [ ] **Step 2:** Push only `feature/cloud-sync-v1.1`, createPR to main with problem/behavior/securitychoices/testevidence and explicit pending realaccount/truedevicechecks. Do not merge. AttachPR tothischat with `attach_artifact`.
-- [ ] **Step 3:** Give userPR/source links, Worker/datarepo instructions, crossdevicetestresults, migration/rollback and securityreport. If manualcloud authorization/physicaltest stillpending, reportexactnextactions and keepgoalopen; do not claim livecloudsync exists.
+- [x] **Step 2:** Push only `feature/cloud-sync-v1.1`, createPR to main with problem/behavior/securitychoices/testevidence and explicit pending realaccount/truedevicechecks. Do not merge. AttachPR tothischat with `attach_artifact`.
+- [x] **Step 3:** Give userPR/source links, Worker/datarepo instructions, crossdevicetestresults, migration/rollback and securityreport. If manualcloud authorization/physicaltest stillpending, reportexactnextactions and keepgoalopen; do not claim livecloudsync exists.
 
 ## Self-review
 
