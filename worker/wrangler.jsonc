@@ -1,0 +1,19 @@
+{
+  "name": "quit365-sync",
+  "main": "index.js",
+  "compatibility_date": "2026-10-22",
+  "workers_dev": true,
+  "observability": { "enabled": false },
+  "durable_objects": {"bindings": [{"name":"AUTH","class_name":"AuthState"}]},
+  "migrations": [{"tag":"v1","new_sqlite_classes":["AuthState"]}],
+  "vars": {
+    "APP_ORIGIN":"https://sunnyflame888.github.io",
+    "APP_URL":"https://sunnyflame888.github.io/quit365/",
+    "WORKER_URL":"https://configure-worker-subdomain.workers.dev",
+    "GITHUB_CLIENT_ID":"",
+    "ALLOWED_USER_ID":"289706800",
+    "DATA_OWNER":"sunnyflame888",
+    "DATA_REPO":"quit365-data",
+    "DATA_BRANCH":"main"
+  }
+}
