@@ -8,7 +8,7 @@ dialog{border:1px solid #47645b;background:#152525;color:var(--text);border-radi
 @media print{body{background:white!important;color:black!important}.sidebar,.mobile-nav,.top-actions,.btn,.no-print,dialog{display:none!important}.main{max-width:none;padding:0}.card,.hero{background:white!important;border:1px solid #ddd;color:black;break-inside:avoid;box-shadow:none}.card *,.hero *{color:black!important}.app-shell{display:block}thead{background:white}}
 /* Dense treatment/log cards should stack on phones; metric grids remain 2-up. */
 @media(max-width:760px){
-  .grid.cols2{grid-template-columns:1fr}
+  .grid.cols2{grid-template-columns:minmax(0,1fr)}
   .dose-line{gap:10px}
   .dose-line .tickbox{white-space:nowrap}
   .dose-text{overflow-wrap:anywhere}

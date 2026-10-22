@@ -95,4 +95,6 @@ quit365-v1/
 - [WHO 成人烟草戒断临床指南（2024）](https://www.who.int/publications/i/item/9789240096431)
 - [CDC 戒烟帮助](https://www.cdc.gov/tobacco/campaign/tips/quit-smoking/index.html)
 
-最后更新：2026-10-22 / V1.0
+最后更新：2026-10-22 / V1.0.1
+
+部署修复：手机治疗计划卡片使用可收缩网格列，防止表格撑宽页面；表格仍可在卡片内横向滚动。未修改治疗方案、药物剂量逻辑及医学安全提示。

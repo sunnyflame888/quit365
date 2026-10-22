@@ -1,6 +1,6 @@
 {
   "name": "quit-365",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "description": "Local-first personal tobacco cessation journal and protocol tracker",
