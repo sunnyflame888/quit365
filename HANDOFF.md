@@ -1,10 +1,14 @@
 # QUIT / 365 — V1.1 增量交接
 
-分支：feature/cloud-sync-v1.1；[Draft PR #1](https://github.com/sunnyflame888/quit365/pull/1)。生产main保持V1.0.3。代码与自动化验收完成度见[验收报告](docs/cloud-sync-acceptance.md)，账户授权与发布步骤见[部署文档](docs/cloud-sync-deploy.md)。Worker已部署，OAuth App及两项加密Secrets已配置，真实未登录拦截/OAuth启动通过；完整登录、私有数据读写和物理iPhone验收仍待完成，不得报告为已上线云同步。
+分支：feature/cloud-sync-v1.1；[Draft PR #1](https://github.com/sunnyflame888/quit365/pull/1)。生产main保持V1.0.3。代码与自动化验收完成度见[验收报告](docs/cloud-sync-acceptance.md)，账户授权与发布步骤见[部署文档](docs/cloud-sync-deploy.md)。Worker、OAuth App及两项加密Secrets已配置；真实桌面Chrome完整登录、私有数据读写、合并及冲突选择通过。物理iPhone和生产切换尚待完成，不得报告生产站已开启云同步。
 
 当前Worker固定回跳HTTPS预览quit365-preview.pages.dev，ALLOW_LOCAL_DEV=false；源码Wrangler默认APP仍为正式Pages，普通deploy会覆盖预览值。本人已完成Pages预览上传，14个静态资源均200且与准备包逐字节一致；正式SYNC_API_URL仍空。PAT在2026-11-21到期，轮换时仍仅数据仓库Contents读写。
 
-真实GitHub授权页面确认仅公开身份数据，回跳到预览成功；交换返回503。实际workerd复现不支持redirect:error及成员函数方式调用原生fetch的Illegal invocation。worker/api.js和github.js已修正为manual且拒绝非2xx、无接收者调用fetch；新增实际workerd完整OAuth/私有读写/拒绝上游跳转回归先失败再通过，npm test为59/59。修复尚未部署：Cloudflare控制台代码编辑器持续加载；此前默认CLI广权限重新授权被自动审查拒绝，未绕过。已请求仅account:read和workers_scripts:write的明确授权，未收到答复前不得启动该授权。
+真实GitHub授权页仅公开身份数据。最初交换503的根因是workerd不支持redirect:error，以及成员方式调用原生fetch的Illegal invocation；修复manual且拒绝非2xx、无接收者调用fetch，新增实际运行时完整OAuth/私有读写/拒绝上游跳转回归先失败再通过。编辑器原有两项诊断也消除：显式序列化URLSearchParams，requireValue正确传递Retry-After（补失败回归）。npm test为60/60，控制台零诊断后已部署Worker版本10d5299b。
+
+本人批准仅account:read/workers_scripts:write重新授权后，编辑器恢复。CLI授权尚未完成即取消，没有授予Wrangler附带的offline_access或新增CLI凭据；使用原有Dashboard会话部署。首次部署曾因编辑器诊断被自动审查拦截，清零并重跑测试后才成功，未绕过拦截。
+
+真实预览合成验收：首次登录仅显示1天本机/0天云端，确认前不上传；JSON实际下载至本机并验证schema1/合成备注/无会话字段；显式迁移后已同步。受控GitHub CLI第二写入者用当前SHA新增另一天，Worker下载后可见；退出期间本机和远端同日分歧，重新登录触发冲突，选择前远端SHA不变，选择本机后已同步且保留远端新增日期。云端现有2天明确标记SYNTHETIC的记录，不是真实健康数据。此受控第二写入者不是物理第二台设备。已请求本人用iPhone Safari验证并追加IPHONE TEST，尚待结果。390px真实HTTPS页面日期边界/进展图文检查通过；不是iPhone真机。
 
 新增模块：sync-schema（安全格式）、sync-merge（三方冲突）、store（原数据库事务/快照）、sync-client（认证/同步状态机）、sync-ui（状态/迁移/冲突）、worker/（OAuth、短期会话、限流、私有GitHub SHA写入）。src/logic.js除VERSION外保留医疗计算；每次变更继续跑原7项及新增回归。
 

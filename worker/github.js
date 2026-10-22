@@ -14,7 +14,7 @@ function decode(text) {
 export class GithubData {
   constructor(env, { fetch: upstreamFetch = globalThis.fetch } = {}) {
     this.env = env;
-    this.fetch = (...args) => upstreamFetch(...args);
+    this.fetch = (input, init) => upstreamFetch(input, init);
   }
   async call(path, init = {}) {
     const e = this.env;

@@ -6,6 +6,6 @@ export class ApiError extends Error {
     this.retryAfter = retryAfter;
   }
 }
-export function requireValue(condition, status = 400, code = 'INVALID_REQUEST') {
-  if (!condition) throw new ApiError(status, code);
+export function requireValue(condition, status = 400, code = 'INVALID_REQUEST', retryAfter) {
+  if (!condition) throw new ApiError(status, code, retryAfter);
 }

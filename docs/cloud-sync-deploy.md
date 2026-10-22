@@ -5,9 +5,9 @@
 ## 当前外部状态
 
 - 源码仓库：[quit365](https://github.com/sunnyflame888/quit365)，公开。
-- 数据仓库：[quit365-data](https://github.com/sunnyflame888/quit365-data)，已创建为 **Private**，main仅初始化README；Pages未启用（API返回404）。
-- Cloudflare登录已验证，Worker已部署为 [quit365-sync.quit-365.workers.dev](https://quit365-sync.quit-365.workers.dev)。GitHub OAuth App已创建，两项秘密已通过控制台分别以Secret类型保存；公开Client ID已配置。真实未登录GET/PUT返回401，伪造会话401，非允许来源403；OAuth入口200、固定回调、S256、空scope已核对。完整登录交换和数据同步仍待验收。
-- 独立预览[quit365-preview](https://quit365-preview.pages.dev/)已由本人完成上传。首页和全部14个公开前端文件均200，内容与准备包逐字节一致。真实GitHub仅公开数据授权及回跳已执行；交换阶段503，实际workerd复现为redirect:error和原生fetch调用绑定不兼容。修复与59项回归已通过，待部署后重试，尚未写入任何云端日志。Worker临时使用该预览作为固定回跳地址，localhost例外关闭；仓库配置保留正式Pages默认值。前端 `src/sync-config.js` 的URL仍为空，生产main未改变。
+- 数据仓库：[quit365-data](https://github.com/sunnyflame888/quit365-data)，**Private**；main含README与`data/state.json`的2天合成验收记录，备注均为SYNTHETIC；Pages未启用。没有上传本人健康日志。
+- Cloudflare登录已验证，Worker已部署为 [quit365-sync.quit-365.workers.dev](https://quit365-sync.quit-365.workers.dev)。GitHub OAuth App已创建，两项秘密均以Secret类型保存；公开Client ID已配置。真实未登录GET/PUT返回401，伪造会话401，非允许来源403；OAuth入口、完整正确账户交换及桌面合成数据同步通过。固定callback、S256和空scope已核对。
+- 独立预览[quit365-preview](https://quit365-preview.pages.dev/)已由本人上传。首页和全部14个公开前端文件均200且逐字节一致。最初OAuth交换503的workerd兼容问题已修复，控制台零诊断后部署Worker版本10d5299b；60项自动测试通过。真实桌面Chrome登录/私有读写/不同日期合并/同日冲突及明确选择通过，物理iPhone仍待本人验证。Worker固定回跳该预览，localhost例外关闭；仓库配置保留正式Pages默认值。前端 `src/sync-config.js` 的URL仍为空，生产main未改变。
 - 本文命令中的Secrets均通过交互提示输入，不把值写进命令、聊天、源码或终端历史。不要用当前gh CLI的广权限token作为Worker凭据。
 
 ## 1. 本机验证
@@ -109,7 +109,7 @@ iPhone真机预生产验收需要可访问的HTTPS预览前端；localhost预览
 
 当前独立HTTPS预览采用Cloudflare Pages直接上传，仅作为非生产验收，不替换GitHub Pages。上传包为 `/private/tmp/quit365-v11-https-preview.zip`：index.html在根，只有styles.css、manifest、sw.js、src的8个模块及2个图标，共14文件；没有Git、文档、测试、Worker代码或Secret。副本中API指向上述Worker，缓存版本为preview1，正式源码API仍关闭。通过控制台上传并部署后，必须先验证首页200、无追踪脚本、静态离线和OAuth，再给iPhone录入合成数据验收。
 
-本次CLI重新授权尝试被自动审批拒绝（默认请求了广泛Cloudflare持久写权限）。已改用原有登录的控制台配置Secret，没有申请这组默认权限。浏览器扩展未扩大file URL访问权限，公开ZIP已由本人手动上传。控制台代码编辑器持续加载，运行时修复待部署；已请求明确授权，仅使用account:read和workers_scripts:write重新授权，不申请Pages、KV、D1或Secrets Store等独立范围。未获答复前不启动此授权。
+此前CLI默认广权限重新授权被自动审批拒绝，没有绕过。本人随后明确批准仅account:read和workers_scripts:write；启动登录后发现Wrangler自动附带offline_access，未授予该范围。控制台编辑器此时恢复，CLI待授权进程已取消，最终通过原有Dashboard会话部署，无新增CLI凭据。浏览器扩展未扩大file URL访问权限，公开ZIP由本人手动上传。控制台首次部署因原有诊断被自动审查拦截，消除诊断并通过60项测试后再部署成功。
 
 ## 7. 前端启用与生产切换
 

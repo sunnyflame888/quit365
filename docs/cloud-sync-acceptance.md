@@ -4,7 +4,7 @@
 
 ## 已取得的证据
 
-- 最终本机 `npm test`：**59/59通过**；Worker dry-run、`git diff --check`及公开源文件凭据/备份名称扫描通过（43个文件）。扫描有已说明的模式覆盖限制。
+- 最终本机 `npm test`：**60/60通过**；Worker dry-run、`git diff --check`及公开源文件凭据/备份名称扫描通过（43个文件）。扫描有已说明的模式覆盖限制。
 - 原7项日期、剂量、无烟统计、CSV防注入与备份校验测试保留。
 - Node自动化覆盖同步文档与格式拒绝、三方合并、同日/settings/删除冲突、原数据库兼容、跨标签旧写入草稿、损坏数据恢复、缺失state但仍有metadata、localStorage降级停同步。
 - 两个实际fake-indexeddb仓库＋条件写网络替身验证：首次迁移需确认、不同日期合并、同日冲突停止写入、离线重开/恢复、上传途中编辑、丢失成功回包、慢GET、关闭同步后迟到的迁移回包。
@@ -15,11 +15,14 @@
 - 两浏览器上下文测试通过：显式迁移→另一设备下载→同日编辑冲突→明确选择→刷新保留；JSON/CSV和AES-GCM备份往返、安全备注渲染、Safari/PWA授权片段回退、静态离线缓存。
 - 同一浏览器内两个标签共享IndexedDB的回归通过；无变化同步及远端数据变化后的同步都保留未保存设置/医嘱表单；迁移和冲突选择保持焦点时，旧界面确认不会应用后台更新的新版本。Chromium、WebKit均通过。
 - 所有浏览器数据为合成数据；未访问本人iPhone日志，也未将测试导出或截图写入公开源码仓库。
-- 已创建quit365-data为Private，main有README，Pages API404；未上传健康记录。
+- 已创建quit365-data为Private，Pages未启用；main现有README和2天明确标记SYNTHETIC的验收记录，没有本人健康日志。
 - 账户本人完成Cloudflare登录后，已实际部署Worker并绑定SQLite AuthState；当前配置尚未完成。真实HTTPS的GET /v1/session、GET /v1/state、PUT /v1/state及POST /auth/start均返回503 CONFIGURATION_REQUIRED和Cache-Control:no-store，拒绝未配置服务的数据访问。这只证明配置阶段拒绝访问，不等同于完成真实OAuth/会话鉴权验收。
-- 后续完成OAuth App创建及两项Cloudflare加密Secret后，真实未登录GET session/state、PUT state均401；伪造会话401 SESSION_EXPIRED；非允许来源403，允许来源预检204。真实POST /auth/start为200，核对GitHub域、公开Client ID、精确callback、S256和空scope；未输出state/verifier。完整OAuth交换及私有数据读写仍未执行。
+- 完成OAuth App创建及两项Cloudflare加密Secret后的配置阶段：真实未登录GET session/state、PUT state均401；伪造会话401 SESSION_EXPIRED；非允许来源403，允许来源预检204。真实POST /auth/start为200，核对GitHub域、公开Client ID、精确callback、S256和空scope。该阶段未执行完整交换，后续成功的真实交换与数据测试见下文。
 - GitHub最终凭据确认：仅quit365-data，Contents读写和Metadata只读，2026-11-21到期；Cloudflare界面两项均为Secret/加密值。没有用gh的广权限token作为运行凭据。
-- 本人上传后，HTTPS预览首页与全部14个静态资源均200，逐字节匹配准备包。真实GitHub授权页仅公开数据，正确账户授权回跳成功，交换阶段503；未上传任何日志。实际workerd复现redirect:error不支持、成员方式调用原生fetch的Illegal invocation。修复采用manual并由非2xx检查拒绝跳转、无接收者调用fetch；新增运行时测试完成合成OAuth/私有仓库读写/上游302拒绝，先失败再通过。修复待部署，真实交换不记为通过。
+- 本人上传后，HTTPS预览首页与全部14个静态资源均200，逐字节匹配准备包。首次真实登录交换503；实际workerd复现redirect:error不支持、成员方式调用原生fetch的Illegal invocation。修复manual并检查非2xx拒绝跳转、无接收者调用fetch；新增实际运行时OAuth/私有读写/上游302拒绝回归先失败再通过。编辑器另两项诊断已清除，修复requireValue丢失Retry-After并补失败回归，URLSearchParams显式序列化。控制台零诊断后已部署10d5299b，真实OAuth交换成功。
+- 真实桌面Chrome：首次同步显示本机1天/云端0天，未确认前无文件；JSON下载实际生成，验证schema1、单日合成备注、不含会话字段。显式迁移后已同步，私有文件实际生成。受控GitHub CLI第二写入者条件新增日期后，Worker下载到本机，数量/备注正确。
+- 真实同日分歧：退出登录后本机继续保存，受控第二写入者以当前SHA修改同一天；重登出现冲突，未选择前云端SHA保持78e2303，明确选择本机后恢复已同步，原远端新增日期保留。该第二写入者为测试脚本，不等同于物理第二台设备。
+- HTTPS预览在桌面Chrome的390×844视口检查：日期输入在容器内、页面无横向溢出，进展图文无明显重叠；视口已恢复。此结果不能替代物理iPhone。下载事件等待接口曾超时，但实际文件已生成并另行验证，没有据超时重复下载。
 
 复现命令见[部署文档](cloud-sync-deploy.md)。浏览器测试通过route替身模拟API，不证明外部GitHub/Cloudflare可用性；WebKit引擎测试不证明物理iPhone上的所有行为。
 
@@ -36,7 +39,7 @@
 | localStorage备用模式无法导入或清空 | 先持久保留恢复前副本，再替换本机状态；快照保存失败不得覆盖，云同步继续禁用。备用恢复测试先失败再通过 |
 | 手动、保存及前台轮询绕过Retry-After | 所有API入口核对统一最早请求时间，合并等待。60秒冷却期间多入口测试先失败再通过 |
 
-审查未判断真实OAuth/Cloudflare/GitHub并发、物理iPhone、PAT实际权限/有效期、实时仓库私密性及临床正确性。处理：真实服务和设备仍列为待验收；PAT由账户本人配置；私有仓库已用本人gh会话另行核对；医学计算文件与main相比仅VERSION变更，原7项测试保留。独立审查者未成功启动其浏览器环境，完整Chromium/WebKit证据来自作者实际执行，来源不混用。
+独立审查没有判断真实OAuth/Cloudflare/GitHub并发、物理iPhone、PAT实际权限/有效期、实时仓库私密性及临床正确性。后续实际凭据配置、私密性核对和桌面真实联调证据另行记录于上文，不冒称来自独立审查；设备未执行部分继续保留待办。医学计算文件与main相比仅VERSION变更，原7项测试保留。独立审查者未成功启动其浏览器环境，完整Chromium/WebKit证据来自作者实际执行，来源不混用。
 
 实现取舍记录：沿用已授权feature分支而不另建worktree（误判代价是隔离不足）；工厂化repository用于独立存储实例并守护浏览器Storage访问（误判会影响降级）；使用当前Wrangler导出的Miniflare兼容转换测试真实workerd（平台升级仍需复验）；用inFlight、generation和syncEpoch防迟到响应（并发正确性由新增回归约束）；1MiB仅限制云文档而不截断本机日志（超限设备暂不能云同步）；预览回跳仅接受管理员固定HTTPS地址或显式localhost配置（配置错误会阻止授权）。
 
@@ -44,10 +47,10 @@
 
 | 边界 | 实现/证据 | 限制 |
 | --- | --- | --- |
-| 身份 | GitHub /user数字ID白名单289706800；OAuth PKCE、state及一次性ticket；错误账户测试；真实OAuth App和启动接口已配置 | 完整真实登录交换尚待预览上传后验证 |
-| 数据凭据 | 前端没有GitHub Token；数据仓库固定且每次核对private；已核对PAT为1仓库/2权限、2026-11-21到期；两项仅Cloudflare加密Secret | 尚未通过真实登录会话验证Worker的数据仓库读写；轮换需保留相同最小权限 |
+| 身份 | GitHub /user数字ID白名单289706800；OAuth PKCE、state及一次性ticket；真实正确账户登录和在线退出通过；错误账户/过期自动化通过 | 未使用另一个真实GitHub账户做在线拒绝测试，也未等待真实会话自然过期 |
+| 数据凭据 | 前端没有GitHub Token；数据仓库固定且每次核对private；PAT为1仓库/2权限、2026-11-21到期；两项仅Cloudflare加密Secret；真实会话读写通过 | 轮换需保留相同最小权限；PAT到期会停止云读写 |
 | API | 所有数据请求先验证应用会话、ID和限流；CORS不是鉴权 | 服务配置/凭据失效时停止云读写 |
-| 并发 | GitHub内容SHA条件写；客户端三方比较；同日与settings不静默覆盖 | 真实GitHub并发返回尚待授权后联调 |
+| 并发 | GitHub内容SHA条件写；客户端三方比较；真实受控第二写入者验证不同日期合并和同日冲突不静默覆盖 | 物理双设备同日编辑、首次文件创建竞争尚待验证；相关路径已有自动化 |
 | 离线 | 本机事务保存、generation/inFlight/syncEpoch、恢复联网重试 | iOS进程被终止后没有后台上传承诺；等待本机保存提示再离开 |
 | 恢复 | 迁移/导入/清空前本机快照；损坏读取不写空状态；退出/清空本机不删除云端 | 浏览器清除全部网站存储也会清除快照，仍需独立加密备份 |
 | 公开源码 | Secrets/运行状态/备份忽略规则及已知凭据模式检查；无第三方前端运行依赖或追踪 | 正则扫描不能证明所有格式的秘密不存在；仍需人工检查最终PR文件清单 |
@@ -59,7 +62,8 @@
 账户本人完成[授权与部署](cloud-sync-deploy.md)后逐项勾选，并记录实际设备、系统版本、时间和结果。没有数据备份时不开始迁移。
 
 - [x] Worker真实HTTPS URL可用；未登录GET/PUT均拒绝，无健康数据响应。
-- [ ] OAuth正确账号登录成功，其他GitHub账号被拒绝；退出和过期后均不可读写云端。
+- [x] OAuth正确账号完整登录成功，在线退出后界面要求重新登录，本机仍可保存。
+- [ ] 其他真实GitHub账号拒绝及真实会话自然过期（已有错误身份/撤销重用/过期自动化）。
 - [x] 确认fine-grained PAT只选quit365-data、Contents读写；数据仓库Private且无Pages。
 - [ ] Mac或PC保存一条合成每日记录、服药勾选与设置，在另一隔离浏览器打开后可见。
 - [ ] 两端同日同时修改，第二次同步出现冲突，未选择前云端不被静默改写。
@@ -70,7 +74,7 @@
 - [ ] 首次迁移预览和本机快照可导出；发生同日或settings差异需明确选择。
 - [ ] 用户审阅PR并批准生产切换后，再完成本人实际设备最终验收。
 
-当前待办依据：Worker与OAuth/Secret已配置，HTTPS静态预览已上线；真实登录遇到的两项运行时兼容问题已修复并通过59项测试，但控制台编辑器加载受阻，修复部署/完整OAuth交换、私有仓库合成记录联调及物理iPhone验收尚未完成。因此不能把V1.1目标标记全部完成。提交8d142a8的分支和PR两轮GitHub Actions均已成功；本次修复另行运行CI。
+当前待办依据：Worker、OAuth/Secret、HTTPS预览及真实桌面合成联调已通过；本人已收到iPhone Safari登录/下载/编辑测试步骤，尚待结果。物理双设备、Safari/PWA、真实离线及生产切换仍不记为通过，因此不能把V1.1目标标记全部完成。提交ca25466的分支和PR两轮GitHub Actions均已成功；当前后续修复另行运行CI。
 
 ## 迁移流程
 

@@ -111,7 +111,7 @@ export function createHandler({ fetch: upstreamFetch = globalThis.fetch } = {}) 
           code_challenge_method: 'S256',
           scope: '',
           allow_signup: 'false'
-        });
+        }).toString();
         response = json({ authorizeUrl: authorize.href });
       } else if (path === '/auth/callback' && request.method === 'GET') {
         requireValue(!url.searchParams.has('error'), 401, 'LOGIN_CANCELLED');

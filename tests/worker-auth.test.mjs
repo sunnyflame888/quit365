@@ -80,3 +80,14 @@ test('rate limit rejects excess calls without resetting its window', async () =>
   advance(60001);
   await auth.limit({ key: 'ip-test', max: 2, window: 60000 });
 });
+test('pending OAuth capacity returns a retry interval and accepts requests after expiry', async () => {
+  const { auth, advance } = authFixture();
+  const challenge = await sha(verifier);
+  for (let i = 0; i < 100; i++)
+    await auth.start({ state: String(i).padStart(43, '0'), challenge });
+  const next = { state: 'n'.repeat(43), challenge };
+  await assert.rejects(auth.start(next), (e) =>
+    e.status === 429 && e.code === 'RATE_LIMIT' && e.retryAfter === 60);
+  advance(600001);
+  assert.deepEqual(await auth.start(next), { ok: true });
+});
