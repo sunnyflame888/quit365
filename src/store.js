@@ -15,12 +15,12 @@ export function createRepository({indexedDB=globalThis.indexedDB,localStorage=br
       tx.oncomplete=()=>{db.close();resolve(result)};tx.onerror=()=>{db.close();reject(tx.error||Error('本机保存失败'))};tx.onabort=()=>{db.close();reject(tx.error||Error('本机事务已取消'))};
     });
   }
-  function check(state){if(state!==undefined){try{validateSyncState(state)}catch{recovery=true;throw new RecoveryError(state)}}}
+  function check(state,meta){if(state===undefined&&meta?.localRevision>0){recovery=true;throw new RecoveryError({missingState:true,lastKnownState:meta.baseState})}if(state!==undefined){try{validateSyncState(state)}catch{recovery=true;throw new RecoveryError(state)}}}
   async function load(){
     if(localStorage?.getItem(NAME+'-fallback-pending'))mode='localstorage';
     if(mode==='indexeddb'){
       let result;try{result=await transact(false,(state,meta)=>({state,meta}))}catch{mode='localstorage'}
-      if(result){check(result.state);expected=result.meta.localRevision;return result.state}
+      if(result){check(result.state,result.meta);expected=result.meta.localRevision;return result.state}
     }
     let raw;try{raw=localStorage?.getItem(NAME);if(!raw)return undefined;const state=JSON.parse(raw);check(state);return state}catch(e){if(e instanceof RecoveryError)throw e;recovery=true;throw new RecoveryError(raw)}
   }
@@ -34,7 +34,7 @@ export function createRepository({indexedDB=globalThis.indexedDB,localStorage=br
     }
     try{localStorage.setItem(NAME,JSON.stringify(state));localStorage.setItem(NAME+'-fallback-pending','1')}catch{mode='unavailable';throw Error('设备无法保存数据，请立即导出备份')}
   }
-  async function readSync(){if(mode!=='indexeddb'||recovery)throw Error('云同步需要正常的IndexedDB；本机数据仍可导出');return transact(false,(state,meta)=>{check(state);return {state,meta}})}
+  async function readSync(){if(mode!=='indexeddb'||recovery)throw Error('云同步需要正常的IndexedDB；本机数据仍可导出');return transact(false,(state,meta)=>{check(state,meta);return {state,meta}})}
   async function updateSync(revision,patch){
     if(mode!=='indexeddb'||recovery)throw Error('云同步需要正常的IndexedDB');
     const result=await transact(true,(state,meta,store)=>{
@@ -44,9 +44,18 @@ export function createRepository({indexedDB=globalThis.indexedDB,localStorage=br
       meta={...meta,...structuredClone(patch.meta||{}),localRevision:meta.localRevision+1};store.put(meta,META);return {state,meta};
     });expected=result.meta.localRevision;return result;
   }
+  async function restore(state){
+    validateSyncState(state);
+    try{
+      const result=await transact(true,(old,meta,store)=>{
+        const snap={key:'snapshot:'+crypto.randomUUID(),at:new Date().toISOString(),label:'before-explicit-restore',state:old};store.put(snap,snap.key);
+        const next={...meta,localRevision:meta.localRevision+1,generation:meta.generation+1,enabled:false,conflict:null,syncEpoch:(meta.syncEpoch||0)+1};store.put(structuredClone(state),KEY);store.put(next,META);return next;
+      });expected=result.localRevision;mode='indexeddb';recovery=false;localStorage?.removeItem?.(NAME+'-fallback-pending');
+    }catch(e){throw Error('无法完成安全恢复；原始数据保留，请检查IndexedDB权限后重试')}
+  }
   async function listSnapshots(){const db=await open();return new Promise((resolve,reject)=>{const tx=db.transaction('kv','readonly'),r=tx.objectStore('kv').getAll();r.onsuccess=()=>{db.close();resolve(r.result.filter(x=>typeof x?.key==='string'&&x.key.startsWith('snapshot:')).map(({key,label,at})=>({key,label,at})))};r.onerror=()=>{db.close();reject(r.error)}})}
   async function readSnapshot(key){if(!key.startsWith('snapshot:'))throw Error('快照标识无效');const db=await open();return new Promise((resolve,reject)=>{const r=db.transaction('kv').objectStore('kv').get(key);r.onsuccess=()=>{db.close();resolve(r.result)};r.onerror=()=>{db.close();reject(r.error)}})}
-  return {load,save,readSync,updateSync,listSnapshots,readSnapshot,storageMode:()=>mode};
+  return {load,save,restore,readSync,updateSync,listSnapshots,readSnapshot,storageMode:()=>mode};
 }
 export const repository=createRepository();
 export const load=(...args)=>repository.load(...args);

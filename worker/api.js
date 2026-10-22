@@ -1,6 +1,9 @@
 import {ApiError,requireValue} from './errors.js';
 import {GithubData} from './github.js';
 const json=(body,status=200)=>Response.json(body,{status});
+function validURLs(env){
+  try{const app=new URL(env.APP_URL),worker=new URL(env.WORKER_URL);const secure=app.protocol==='https:';const local=env.ALLOW_LOCAL_DEV==='true'&&app.protocol==='http:'&&['localhost','127.0.0.1'].includes(app.hostname);return (secure||local)&&app.origin===env.APP_ORIGIN&&!app.username&&!app.password&&!app.search&&!app.hash&&app.pathname.endsWith('/')&&worker.protocol==='https:'&&env.WORKER_URL===worker.origin}catch{return false}
+}
 async function body(request){
   requireValue(request.headers.get('Content-Type')?.split(';')[0]==='application/json',415,'JSON_REQUIRED');
   const reader=request.body?.getReader();if(!reader)throw new ApiError(400,'INVALID_REQUEST');let size=0;const parts=[];
@@ -13,7 +16,7 @@ export function createHandler({fetch:upstreamFetch=globalThis.fetch}={}){
     async function auth(op,args){const stub=env.AUTH.get(env.AUTH.idFromName('quit365-auth-v1'));const r=await stub.fetch('https://auth.internal/'+op,{method:'POST',body:JSON.stringify(args)});const b=await r.json();if(!r.ok)throw new ApiError(r.status,b.error||'AUTH_FAILED',b.retryAfter);return b}
     async function github(url,init){const r=await upstreamFetch(url,{...init,redirect:'error'});if(!r.ok)throw new ApiError(502,'GITHUB_AUTH_UNAVAILABLE');return r}
     try{
-      requireValue(env.APP_ORIGIN==='https://sunnyflame888.github.io'&&env.APP_URL==='https://sunnyflame888.github.io/quit365/'&&env.WORKER_URL?.startsWith('https://')&&env.GITHUB_CLIENT_ID&&env.GITHUB_CLIENT_SECRET&&env.GITHUB_DATA_TOKEN&&env.AUTH&&env.ALLOWED_USER_ID==='289706800',503,'CONFIGURATION_REQUIRED');
+      requireValue(validURLs(env)&&env.GITHUB_CLIENT_ID&&env.GITHUB_CLIENT_SECRET&&env.GITHUB_DATA_TOKEN&&env.AUTH&&env.ALLOWED_USER_ID==='289706800',503,'CONFIGURATION_REQUIRED');
       requireValue(!origin||origin===env.APP_ORIGIN,403,'ORIGIN_DENIED');
       const url=new URL(request.url),path=url.pathname;
       if(request.method==='OPTIONS'){requireValue(origin===env.APP_ORIGIN,403,'ORIGIN_DENIED');response=new Response(null,{status:204})}

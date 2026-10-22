@@ -24,6 +24,6 @@ export function validateSyncState(s){
     array(l.coping,6);if(l.coping.some(c=>!Object.hasOwn(COPINGS,c)))fail();str(l.notes,3000);timestamp(l.updatedAt);
   }
   array(s.urges,20000);for(const u of s.urges){keys(u,['date','at','type','id']);date(u.date);timestamp(u.at);if(u.type!=='coping-session')fail();if(u.id!==undefined){str(u.id,128);if(!/^[\w:-]+$/.test(u.id))fail()}}
-  if(documentBytes({formatVersion:1,appState:s})>MAX_DOCUMENT_BYTES)fail();return s;
+  return s;
 }
-export function validateDocument(d){keys(d,['formatVersion','appState']);if(d.formatVersion!==1)fail();validateSyncState(d.appState);return d}
+export function validateDocument(d){keys(d,['formatVersion','appState']);if(d.formatVersion!==1)fail();validateSyncState(d.appState);if(documentBytes(d)>MAX_DOCUMENT_BYTES)throw Error('云端文档超过1MiB，已保留本机数据；请导出备份后调整云端容量');return d}

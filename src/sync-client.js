@@ -13,7 +13,7 @@ export function createTransport(baseURL,{fetch:fetcher=globalThis.fetch}={}){
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
     try{const r=await fetcher(url.origin+path,{method,cache:'no-store',credentials:'omit',redirect:'error',signal:controller.signal,headers:{...(token?{Authorization:'Bearer '+token}:{}),...(body!==undefined?{'Content-Type':'application/json'}:{})},body:body===undefined?undefined:JSON.stringify(body)});
       let data;try{data=await r.json()}catch{throw Object.assign(Error('服务返回了无法读取的数据'),{status:r.status||503})}
-      if(!r.ok){const retry=r.headers.get('Retry-After');throw Object.assign(Error(data.error||'SYNC_REQUEST_FAILED'),{status:r.status,retryAfter:retry?(/^[0-9]+$/.test(retry)?Number(retry)*1000:Math.max(0,Date.parse(retry)-Date.now())):undefined})}return data;
+      if(!r.ok){const retry=r.headers.get('Retry-After');throw Object.assign(Error(data.error||'SYNC_REQUEST_FAILED'),{status:r.status,retryable:!['INVALID_CLOUD_DATA','PRIVATE_REPOSITORY_REQUIRED','CONFIGURATION_REQUIRED','DATA_BRANCH_UNAVAILABLE'].includes(data.error),retryAfter:retry?(/^[0-9]+$/.test(retry)?Number(retry)*1000:Math.max(0,Date.parse(retry)-Date.now())):undefined})}return data;
     }finally{clearTimeout(timer)}
   };
 }
@@ -41,10 +41,10 @@ export function createSyncClient({repository,transport,onState=()=>{},onStatus=(
     if(epoch!==undefined&&(current.meta.syncEpoch||0)!==epoch){emit('migration',{detail:'自动同步已关闭；已发送的旧请求不会重新开启同步'});return}
     const result=await repository.updateSync(current.meta.localRevision,{...(unchanged?{state:candidate}:{}),meta:{baseState:structuredClone(candidate),baseRevision:revision,ackedGeneration:generation,inFlight:null,conflict:null,...(migration?{enabled:true,migration:true}:{})}});
     if(unchanged)await onState(candidate,current.state);
-    retry=0;clock.clearTimeout(retryTimer);emit(result.meta.generation>result.meta.ackedGeneration?'pending':'synced',{at:clock.now()});
+    retry=0;clock.clearTimeout(retryTimer);const after=await repository.readSync();if(after.meta.conflict)emit('conflict',{conflicts:after.meta.conflict.merge.conflicts});else emit(after.meta.generation>after.meta.ackedGeneration?'pending':'synced',{at:clock.now()});
   }
   async function upload(candidate,remote,generation,{migration=false}={}){
-    try{validateSyncState(candidate)}catch(e){e.retryable=false;throw e}const current=await repository.readSync();const epoch=current.meta.syncEpoch||0;
+    try{validateDocument({formatVersion:1,appState:candidate})}catch(e){e.retryable=false;throw e}const current=await repository.readSync();const epoch=current.meta.syncEpoch||0;
     if(!migration&&!current.meta.enabled){emit('migration');return}
     if(current.meta.generation!==generation)throw Object.assign(Error('本机记录已变化，请重新同步'),{status:409});
     await repository.updateSync(current.meta.localRevision,{meta:{inFlight:{state:candidate,generation}},...(migration&&!current.meta.migrationSnapshot?{snapshot:{label:'before-cloud-migration',state:current.state},meta:{...current.meta,inFlight:{state:candidate,generation},migrationSnapshot:true}}:{})});
@@ -56,10 +56,10 @@ export function createSyncClient({repository,transport,onState=()=>{},onStatus=(
     let local=await repository.readSync();if(!local.meta.enabled){await makePreview();return}
     const remote=await cloud();local=await repository.readSync();if(!local.meta.enabled){emit('migration');return}
     if(!remote.document&&local.meta.baseRevision!==null)throw Error('云端数据文件消失；自动同步已停止，请核对私有仓库');
-    const base=local.meta.inFlight&&remote.document&&equal(local.meta.inFlight.state,remote.document.appState)?local.meta.inFlight.state:local.meta.baseState;
+    const base=local.meta.conflict?.baseState??(local.meta.inFlight&&remote.document&&equal(local.meta.inFlight.state,remote.document.appState)?local.meta.inFlight.state:local.meta.baseState);
     const merged=remote.document?mergeStates(base,local.state,remote.document.appState):mergeStates(local.state,local.state,local.state);
     if(merged.conflicts.length){
-      const conflict={merge:merged,revision:remote.revision,generation:local.meta.generation};await repository.updateSync(local.meta.localRevision,{meta:{conflict}});emit('conflict',{conflicts:merged.conflicts});return;
+      const conflict={merge:merged,revision:remote.revision,generation:local.meta.generation,baseState:base,localState:local.state,remoteState:remote.document.appState};await repository.updateSync(local.meta.localRevision,{meta:{conflict}});emit('conflict',{conflicts:merged.conflicts});return;
     }
     if(remote.document&&equal(merged.state,remote.document.appState))await acknowledge(merged.state,remote.revision,local.meta.generation);
     else await upload(merged.state,remote,local.meta.generation);
@@ -95,5 +95,6 @@ export function createSyncClient({repository,transport,onState=()=>{},onStatus=(
   const resumed=()=>{if(!globalThis.document||document.visibilityState==='visible')syncNow()};
   function start(){if(started)return;started=true;stopped=false;globalThis.window?.addEventListener('online',resumed);globalThis.document?.addEventListener('visibilitychange',resumed);pollTimer=clock.setTimeout(poll,30000);return syncNow()}
   function stop(){stopped=true;clock.clearTimeout(saveTimer);clock.clearTimeout(pollTimer);clock.clearTimeout(retryTimer);globalThis.window?.removeEventListener('online',resumed);globalThis.document?.removeEventListener('visibilitychange',resumed)}
-  return {start,stop,notifySaved,syncNow,beginLogin,finishLogin,logout,disconnect,confirmMigration,resolveConflicts,previewMigration:()=>serial(makePreview),getStatus:()=>status,subscribe:fn=>{subscribers.add(fn);fn(status);return()=>subscribers.delete(fn)}};
+  async function exportVersions(){const local=await repository.readSync();return {local:local.state,remote:preview?.remote.document?.appState||local.meta.conflict?.remoteState||local.meta.baseState}}
+  return {exportVersions,start,stop,notifySaved,syncNow,beginLogin,finishLogin,logout,disconnect,confirmMigration,resolveConflicts,previewMigration:()=>serial(makePreview),getStatus:()=>status,subscribe:fn=>{subscribers.add(fn);fn(status);return()=>subscribers.delete(fn)}};
 }
