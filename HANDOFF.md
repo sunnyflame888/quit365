@@ -1,3 +1,27 @@
+# QUIT / 365 — V1.1 增量交接
+
+分支：feature/cloud-sync-v1.1；[PR #1](https://github.com/sunnyflame888/quit365/pull/1)。生产main保持V1.0.3。代码与验收见[验收报告](docs/cloud-sync-acceptance.md)，部署及切换步骤见[部署文档](docs/cloud-sync-deploy.md)。真实登录、私有数据读写、合并/冲突以及iPhone→电脑同步通过。主屏幕与真机离线验证按用户要求跳过；生产切换不在本次PR交付范围内。
+
+当前Worker固定回跳HTTPS预览quit365-preview.pages.dev，ALLOW_LOCAL_DEV=false；源码Wrangler默认APP仍为正式Pages，普通deploy会覆盖预览值。本人已完成Pages预览上传，14个静态资源均200且与准备包逐字节一致；正式SYNC_API_URL仍空。PAT在2026-11-21到期，轮换时仍仅数据仓库Contents读写。
+
+真实GitHub授权页仅公开身份数据。最初交换503的根因是workerd不支持redirect:error，以及成员方式调用原生fetch的Illegal invocation；修复manual且拒绝非2xx、无接收者调用fetch，新增实际运行时完整OAuth/私有读写/拒绝上游跳转回归先失败再通过。编辑器原有两项诊断也消除：显式序列化URLSearchParams，requireValue正确传递Retry-After（补失败回归）。npm test为60/60，控制台零诊断后已部署Worker版本10d5299b。
+
+本人批准仅account:read/workers_scripts:write重新授权后，编辑器恢复。CLI授权尚未完成即取消，没有授予Wrangler附带的offline_access或新增CLI凭据；使用原有Dashboard会话部署。首次部署曾因编辑器诊断被自动审查拦截，清零并重跑测试后才成功，未绕过拦截。
+
+真实合成验收：首次确认前不上传；JSON实际下载并验证schema1/无会话字段；显式迁移后已同步。受控第二写入者新增日期可下载，同日分歧触发冲突，选择前云端SHA不变，选择后保留另一天；实际GitHub过期SHA写入返回409。iPhone Safari用户报告已同步，云端和电脑随后均核验到IPHONE TEST（用户将原合成备注替换为该标记）；未读取原生产站健康日志。390px日期/进展布局检查通过。2026-10-22用户明确取消主屏幕与真机离线验证，记录为未验证，不继续请求该步骤。iOS版本未提供。
+
+新增模块：sync-schema（安全格式）、sync-merge（三方冲突）、store（原数据库事务/快照）、sync-client（认证/同步状态机）、sync-ui（状态/迁移/冲突）、worker/（OAuth、短期会话、限流、私有GitHub SHA写入）。src/logic.js除VERSION外保留医疗计算；每次变更继续跑原7项及新增回归。
+
+数据兼容：数据库quit365-local-v1、kv/state与schemaVersion=1不变；sync-meta及snapshot键仅在本机。不要将sync-meta混入JSON备份（其中可能有短期PKCE verifier）。云端formatVersion=1与医疗数据版本分开；未来版本拒绝写回。新烟瘾应对记录增加可选稳定id，V1.0可忽略；旧记录以稳定旧字段及出现序号比较。
+
+保护约束：先本机落盘再上传；generation避免旧ACK确认新编辑；inFlight识别上传成功回包丢失；syncEpoch防止清空/断开后旧请求重启同步；同日/settings冲突不按时间戳猜优先级。本机失败、缺state但有metadata、损坏状态均须保留恢复路径，不能初始化空库并上传。
+
+仅本地模式保留localStorage备用；此时不具备IndexedDB事务保证，云同步暂停。导入/清空先留本机快照并停止同步。读取远端不得直接覆盖正在输入的内存草稿；app接收回包时仍作三方比较。
+
+Worker所有读写须认证；固定数字ID289706800、private数据仓库与路径；fine-grained PAT只选数据仓库，放Cloudflare Secrets。Pages静态发布根目录中的文件均视为公开，即使文件夹名叫worker也不能放Secrets。CF观测日志关闭，不打印健康payload、OAuth code或token。
+
+以下保留原交接规则与数据格式；V1.1能力以本节及新增文档为准。
+
 # QUIT / 365 — V1.0 项目交接与验收
 
 ## 产品决策

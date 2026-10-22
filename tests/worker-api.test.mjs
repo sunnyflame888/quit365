@@ -1,0 +1,83 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createHandler } from '../worker/api.js';
+import { GithubData } from '../worker/github.js';
+import { fixture } from './fixtures.mjs';
+const env = {
+  APP_ORIGIN: 'https://sunnyflame888.github.io',
+  APP_URL: 'https://sunnyflame888.github.io/quit365/',
+  WORKER_URL: 'https://worker.example',
+  GITHUB_CLIENT_ID: 'synthetic',
+  GITHUB_CLIENT_SECRET: 'not-real-secret',
+  GITHUB_DATA_TOKEN: 'not-real-token',
+  ALLOWED_USER_ID: '289706800',
+  DATA_OWNER: 'sunnyflame888',
+  DATA_REPO: 'quit365-data',
+  DATA_BRANCH: 'main',
+  AUTH: {
+    idFromName: () => 1,
+    get: () => ({ fetch: async () => Response.json({ error: 'UNAUTHORIZED' }, { status: 401 }) })
+  }
+};
+test('missing bearer cannot read or write data even with forged correct Origin', async () => {
+  let upstream = 0;
+  const handler = createHandler({
+    fetch: async () => {
+      upstream++;
+      throw Error('must not run');
+    }
+  });
+  for (const method of ['GET', 'PUT']) {
+    const r = await handler(
+      new Request('https://worker.example/v1/state', {
+        method,
+        headers: { Origin: env.APP_ORIGIN }
+      }),
+      env
+    );
+    assert.equal(r.status, 401);
+    assert.equal(r.headers.get('Cache-Control'), 'no-store');
+  }
+  assert.equal(upstream, 0);
+});
+test('untrusted origin and OAuth open redirects are denied', async () => {
+  const handler = createHandler();
+  const r = await handler(
+    new Request('https://worker.example/auth/start', {
+      method: 'POST',
+      headers: { Origin: 'https://attacker.example', 'Content-Type': 'application/json' },
+      body: '{}'
+    }),
+    env
+  );
+  assert.equal(r.status, 403);
+  assert.equal(r.headers.get('Access-Control-Allow-Origin'), null);
+});
+test('data repository adapter refuses a public repository', async () => {
+  const data = new GithubData(env, { fetch: async () => Response.json({ private: false }) });
+  await assert.rejects(data.read(), (e) => e.status === 503);
+});
+test('GitHub SHA conflict never triggers an unconditional overwrite', async () => {
+  const calls = [];
+  const data = new GithubData(env, {
+    fetch: async (url, opts) => {
+      calls.push({ url, opts });
+      return opts.method === 'PUT'
+        ? Response.json({ message: 'conflict' }, { status: 409 })
+        : Response.json({ private: true });
+    }
+  });
+  await assert.rejects(
+    data.write({ formatVersion: 1, appState: fixture() }, 'a'.repeat(40)),
+    (e) => e.status === 409
+  );
+  const puts = calls.filter((c) => c.opts.method === 'PUT');
+  assert.equal(puts.length, 1);
+  assert.equal(JSON.parse(puts[0].opts.body).sha, 'a'.repeat(40));
+});
+test('no missing-file fallback when repository permission check fails', async () => {
+  const data = new GithubData(env, {
+    fetch: async () => Response.json({ message: 'not found' }, { status: 404 })
+  });
+  await assert.rejects(data.read(), (e) => e.status === 503);
+});

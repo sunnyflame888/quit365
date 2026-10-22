@@ -1,0 +1,29 @@
+name: V1.1 validation
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/cloud-sync-v1.1]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npm run worker:check
+      - run: npm run check:public
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:browser
+      - run: npm run test:browser
+        env:
+          QUIT365_BROWSER: webkit

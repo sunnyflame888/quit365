@@ -1,3 +1,20 @@
+# QUIT / 365 — V1.1 云同步候选版本
+
+当前feature分支增加可选跨设备同步；生产GitHub Pages仍为V1.0.3，PR未经用户批准不会合并。默认云同步关闭，现有本地记录、治疗逻辑与PWA保留。
+
+Worker及GitHub OAuth/Cloudflare Secrets已配置，[非生产预览](https://quit365-preview.pages.dev/)已部署并核对全部14个静态资源。60项测试通过；真实登录、私有读写、合并/冲突处理及iPhone→电脑同步通过。主屏幕与真机离线验证按用户要求跳过。当前前端默认API为空，生产main保持原版；正式切换步骤见部署文档。
+
+- [部署与GitHub/Cloudflare授权步骤](docs/cloud-sync-deploy.md)
+- [验收证据、安全边界、迁移和回滚](docs/cloud-sync-acceptance.md)
+- [已批准的安全设计](docs/superpowers/specs/2026-10-22-cloud-sync-v1.1-design.md)
+- [实施计划](docs/superpowers/plans/2026-10-22-cloud-sync-v1.1.md)
+
+V1.1使用GitHub OAuth/PKCE→Cloudflare Worker→独立Private的quit365-data仓库。未登录/未确认迁移时不上传。开启后先在本机保存，随后同步；同日记录或治疗设置发生并发编辑时要求明确选择。前台约30秒检查其他设备更新，不承诺PWA关闭后后台实时同步。私有云端不是端到端加密；原有AES-GCM加密备份继续可用。
+
+开发环境Node22+：`npm ci --ignore-scripts`、`npm test`、`npm run worker:check`；浏览器回归使用 `npx playwright install chromium webkit`、`npm run test:browser`、`QUIT365_BROWSER=webkit npm run test:browser`。Secret只能配置于Cloudflare，不放进本项目任何公开目录。
+
+以下为原V1.0说明；其中“无账号/不上传”描述本地模式，V1.1明确开启同步后以以上安全设计及部署文档为准。
+
 # QUIT / 365 — 私人戒烟执行与记录系统 V1.0
 
 手机优先、静态部署、离线优先、本地保存、无账号和外部分析脚本的个人戒烟管理工具。
