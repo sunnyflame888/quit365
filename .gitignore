@@ -17,3 +17,9 @@ test-results/
 
 # Browser QA artifacts
 .playwright-mcp/
+
+# Worker credentials, local runtime state and development scratch
+.dev.vars*
+.wrangler/
+.superpowers/
+worker/.dev.vars*
