@@ -57,7 +57,7 @@
 - Produces: `mergeStates(base|null, local, remote): {state, conflicts:[{path,base,local,remote}], changed:boolean}`; `resolveMerge(result, choices): State` where every conflicting path must explicitly choose `local` or `remote`; never overwrite input objects.
 - Logs keyed by date; settings one conflict unit; urges keyed by stable id or legacy timestamp/type/date with occurrence index; missing log distinct from confirmed zero. During migration base=null, differing settings or same-date logs require choices.
 
-- [ ] **Step 1: Write failing tests.** Include these assertions and malicious/unknown schema inputs:
+- [x] **Step 1: Write failing tests.** Include these assertions and malicious/unknown schema inputs:
   ```js
   assert.throws(()=>validateDocument({formatVersion:2,appState:initialState()}));
   assert.equal(mergeStates(base,changeDay(base,'2026-10-22'),changeDay(base,'2026-10-23')).conflicts.length,0);
@@ -65,10 +65,10 @@
   assert.throws(()=>resolveMerge(conflicted,{}));
   ```
   Fixtures define `changeDay(state,date)` as a copied completed log insertion; `changeNote(state,text)` changes the same dated log. Test settings conflicts, deletion-vs-edit, repeated urge import, future format, oversized UTF-8 input, prototype keys, HTML-like time strings, numeric strings/NaN, missing completion, and nonmutation.
-- [ ] **Step 2:** Run `node --test tests/sync-schema.test.mjs tests/sync-merge.test.mjs`; confirm missing modules fail.
-- [ ] **Step 3:** Implement interfaces, preserve only validated schema-compatible data without coercing missing days to zero; reject unsafe input while leaving original available to recovery.
-- [ ] **Step 4:** Run same command and `npm test`; require all new and original7 pass.
-- [ ] **Step 5:** Commit `feat: define versioned sync documents and conflict-safe merge`.
+- [x] **Step 2:** Run `node --test tests/sync-schema.test.mjs tests/sync-merge.test.mjs`; confirm missing modules fail.
+- [x] **Step 3:** Implement interfaces, preserve only validated schema-compatible data without coercing missing days to zero; reject unsafe input while leaving original available to recovery.
+- [x] **Step 4:** Run same command and `npm test`; require all new and original7 pass.
+- [x] **Step 5:** Commit `feat: define versioned sync documents and conflict-safe merge`.
 
 ## Task 2: 事务性本地存储与恢复
 
@@ -80,16 +80,16 @@
 - Add `updateSync(expectedLocalRevision, {state?,meta?,snapshot?}): Promise<{state,meta}>` in one readwrite transaction; return a typed `LocalConflictError` for stale revisions and retain its candidate as a separate local draft.
 - Add `listSnapshots()` / `readSnapshot(key)` for migration/recovery exports; preserve originalstate on parse/validation failures. Cloud operations refuse fallback mode.
 
-- [ ] **Step 1:** Write tests opening an actual fake IndexedDB with V1.0 state, then assert exact original load, initialize-vs-edit generation, atomic state+meta commit, transaction failure preservation, stale-tab draft retention, metadata excluded from normal state export, raw corrupt-state recovery, IndexedDB refusal and localStorage fallback.
+- [x] **Step 1:** Write tests opening an actual fake IndexedDB with V1.0 state, then assert exact original load, initialize-vs-edit generation, atomic state+meta commit, transaction failure preservation, stale-tab draft retention, metadata excluded from normal state export, raw corrupt-state recovery, IndexedDB refusal and localStorage fallback.
   ```js
   assert.deepEqual(await load(),legacyState);
   await assert.rejects(updateSync(oldRevision,{state:otherEdit}),LocalConflictError);
   assert.deepEqual((await readSync()).state,latestCommittedState);
   ```
-- [ ] **Step 2:** Run `node --test tests/sync-store.test.mjs`; confirm absent interface fails.
-- [ ] **Step 3:** Implement transactional persistence on originalkv; no new databaseversion/objectstore required. Add ignored `.wrangler/`, `.dev.vars*`, secret/QA directories. Pin devdependency via lockfile without introducing front-end dependency.
-- [ ] **Step 4:** Repeat tests and original7; assert stored rejection snapshot can be exported even when normal parsing fails.
-- [ ] **Step 5:** Commit `feat: preserve local sync revisions and recovery snapshots`.
+- [x] **Step 2:** Run `node --test tests/sync-store.test.mjs`; confirm absent interface fails.
+- [x] **Step 3:** Implement transactional persistence on originalkv; no new databaseversion/objectstore required. Add ignored `.wrangler/`, `.dev.vars*`, secret/QA directories. Pin devdependency via lockfile without introducing front-end dependency.
+- [x] **Step 4:** Repeat tests and original7; assert stored rejection snapshot can be exported even when normal parsing fails.
+- [x] **Step 5:** Commit `feat: preserve local sync revisions and recovery snapshots`.
 
 ## Task 3: Worker认证、会话与GitHub条件写API
 
@@ -102,11 +102,11 @@
 - HTTP endpoints exactly as approvedspec. `/auth/start` body `{state,challenge}` returns authorizeURL; callback returns fixed Pages fragment `{ticket}`; exchange body `{ticket,verifier}` returns `{token,expiresAt,user:{id,login}}`. State endpoint envelope `{revision,document}`. CORS adds Authorization/Content-Type only for exact origin; no credentialed cookies.
 - Env public values: `APP_ORIGIN`, `APP_URL`, `WORKER_URL`, `GITHUB_CLIENT_ID`, `ALLOWED_USER_ID`, `DATA_OWNER`, `DATA_REPO`, `DATA_BRANCH`; secrets: `GITHUB_CLIENT_SECRET`, `GITHUB_DATA_TOKEN`; binding `AUTH`.
 
-- [ ] **Step 1:** Write tests with deterministic clock and mocked GitHub HTTP/transactional storage. Assert unauthenticated and expired requests401; wrongID403; forgedOrigin/missingOrigin cannot bypass bearer; PKCE/state mismatch/replay rejection; concurrent exchange only oneGitHub redemption; deniedOAuth and lostexchange recover by restartinglogin; immediate logout; emptyrepo vs missingpermission; private=false rejects; staleSHA409; invalidschema400/413; upstream401/429/5xx do not leak payload/secrets; all sensitive responsesno-store; redirects never receive authorization; all rate/expiry limits matchglobalconstraints.
-- [ ] **Step 2:** Run `node --test tests/worker-*.test.mjs`; confirm failure before implementation.
-- [ ] **Step 3:** Implement module boundaries; token hashes/indexes, atomic pending→exchanging→consumed; SHA-based GitHubPUT and exact allowlist. Configure SQLiteDOmigration and disable application request-body/token logging. Any test account/secret is synthetic only.
-- [ ] **Step 4:** Run unit suite and `npx wrangler deploy --dry-run --config worker/wrangler.jsonc --outdir /private/tmp/quit365-worker-build`; require validbundle with no publicsecrets. Exercise DOservicebinding under local workerd as integration rather than claim mocks equal production.
-- [ ] **Step 5:** Commit `feat: secure worker OAuth sessions and private GitHub storage`.
+- [x] **Step 1:** Write tests with deterministic clock and mocked GitHub HTTP/transactional storage. Assert unauthenticated and expired requests401; wrongID403; forgedOrigin/missingOrigin cannot bypass bearer; PKCE/state mismatch/replay rejection; concurrent exchange only oneGitHub redemption; deniedOAuth and lostexchange recover by restartinglogin; immediate logout; emptyrepo vs missingpermission; private=false rejects; staleSHA409; invalidschema400/413; upstream401/429/5xx do not leak payload/secrets; all sensitive responsesno-store; redirects never receive authorization; all rate/expiry limits matchglobalconstraints.
+- [x] **Step 2:** Run `node --test tests/worker-*.test.mjs`; confirm failure before implementation.
+- [x] **Step 3:** Implement module boundaries; token hashes/indexes, atomic pending→exchanging→consumed; SHA-based GitHubPUT and exact allowlist. Configure SQLiteDOmigration and disable application request-body/token logging. Any test account/secret is synthetic only.
+- [x] **Step 4:** Run unit suite and `npx wrangler deploy --dry-run --config worker/wrangler.jsonc --outdir /private/tmp/quit365-worker-build`; require validbundle with no publicsecrets. Exercise DOservicebinding under local workerd as integration rather than claim mocks equal production.
+- [x] **Step 5:** Commit `feat: secure worker OAuth sessions and private GitHub storage`.
 
 ## Task 4: 前端同步状态机与认证客户端
 
@@ -114,21 +114,21 @@
 
 **Interfaces:**
 - `createSyncClient({repository,transport,onState,onStatus,clock,online,sessionStorage}): SyncClient`; repository uses task2 snapshot/transaction interfaces; transport wraps WorkerAPI with cache:no-store, credentials:omit, timeout15s and validatedHTTPS baseURL.
-- Methods `start()`, `notifySaved()`, `syncNow()`, `beginLogin()`, `finishLogin(ticket)`, `logout()`, `previewMigration()`, `confirmMigration(choices)`, `resolveConflicts(choices)`, `disconnect()`, `stop()`.
+- Methods `start()`, `notifySaved()`, `syncNow()`, `beginLogin()`, `finishLogin(ticket)`, `logout()`, `previewMigration()`, `confirmMigration(choices, reviewedVersion)`, `resolveConflicts(choices, reviewedVersion)`, `disconnect()`, `stop()`.
 - `onStatus({kind,message,conflicts?,migration?,user?})`; `onState(state)` only after accepted localtransaction, never raw unvalidatedremote. `beginLogin` retains verifier/state outside exportedhealthstate; `finishLogin` requires localverifier and ticket, removes transientvalues on completion/expiry. Session onlysessionStorage.
 - Disabled APIconfig yields localonly status and no network; sessionexpired preserves queue; disconnect stops uploads and keeps data. Firstmigration explicit, with snapshot before apply; cloudclear is never automatic consequence of localclear/import.
 
-- [ ] **Step 1:** Write two-client tests sharing mock CASserver but separate persistent repositories; assert automatic save/upload/read; differentdays merge; sameday/settings conflicts stopwrite; offline→restart→online drains durablepending; ACKlost+subsequentedit not falselyacknowledged; slowGET cannot overwrite newedit; repeatedmigration/idempotency; onlyfetchonapprovedmigration; clear-local/disconnect neverdeletecloud; retrybackoff/Retry-After; 401requireslogin; formatinvalid retainsdraft.
+- [x] **Step 1:** Write two-client tests sharing mock CASserver but separate persistent repositories; assert automatic save/upload/read; differentdays merge; sameday/settings conflicts stopwrite; offline→restart→online drains durablepending; ACKlost+subsequentedit not falselyacknowledged; slowGET cannot overwrite newedit; repeatedmigration/idempotency; onlyfetchonapprovedmigration; clear-local/disconnect neverdeletecloud; retrybackoff/Retry-After; 401requireslogin; formatinvalid retainsdraft.
   ```js
   assert.equal(status.kind,'conflict');
   assert.equal(server.writeCount,beforeConflictWrites);
   assert.equal((await repo.readSync()).meta.ackedGeneration,uploadedGeneration);
   assert.ok((await repo.readSync()).meta.generation>uploadedGeneration);
   ```
-- [ ] **Step 2:** Run `node --test tests/sync-client.test.mjs`; require missingclient failure.
-- [ ] **Step 3:** Implement serializedstate machine with generationchecks and threewaymerge. Runtime lifecycle sync on online/visibilitychange plus foreground30spoll, with timer cleanup; no backgroundsync promise. Avoid unbounded retry or snapshot accumulation.
-- [ ] **Step 4:** Run deterministic client tests plus all prior tests; check exact state transitions and atomic acknowledgements.
-- [ ] **Step 5:** Commit `feat: synchronize durable local edits with conflict-safe retries`.
+- [x] **Step 2:** Run `node --test tests/sync-client.test.mjs`; require missingclient failure.
+- [x] **Step 3:** Implement serializedstate machine with generationchecks and threewaymerge. Runtime lifecycle sync on online/visibilitychange plus foreground30spoll, with timer cleanup; no backgroundsync promise. Avoid unbounded retry or snapshot accumulation.
+- [x] **Step 4:** Run deterministic client tests plus all prior tests; check exact state transitions and atomic acknowledgements.
+- [x] **Step 5:** Commit `feat: synchronize durable local edits with conflict-safe retries`.
 
 ## Task 5: 既有UI、迁移与备份的增量接入
 
@@ -141,25 +141,25 @@
 - Migrationcheckbox confirmsbackup; preview conflicts use explicit choices, no defaultdestructive selection. Exports can select retained recovery snapshots; encryptedbackup stays AES-GCM. Localdelete disconnects sync before writing emptylocalstate; import pauses upload until preview/confirmation.
 - Version1.1.0; cachedassets include all newfrontendmodules; API/sessions nevercached; CSP permits onlyself scripts and configuredHTTPSWorker, preserves relativepaths.
 
-- [ ] **Step 1:** Write browser acceptance assertions before wiring: disabledconfig noAPIcalls; logediting persists; localfailures nofalse success; full login→migration→syncstatus; missingverifier callback displays copyfallback; maliciousnotes renderastext; import/clear explicitly preservecloud; conflictchoicesrequired; originalexports stillwork.
-- [ ] **Step 2:** Run with injectable localmockWorker on nonproductionURL; capture failures from unimplementedcontrols.
-- [ ] **Step 3:** Integrate client/UI without refactoring medicalviews; only privacycopy reflects cloudopt-in. Add V1.1asset/cacheversion; ensure no secrets in config or HTML.
-- [ ] **Step 4:** Run `npm test` and browser flows at 320/375/390/420/430/768/1440px, including datecontrolbounds and chartcaptiongaps. Verify offlineassets, unchangedmedicaloutputs, savedlogs/medchecks and JSON/CSV/encryptedroundtrip; screenshots outsidegit.
-- [ ] **Step 5:** Commit `feat: expose opt-in cloud sync and safe migration in existing PWA`.
+- [x] **Step 1:** Write browser acceptance assertions before wiring: disabledconfig noAPIcalls; logediting persists; localfailures nofalse success; full login→migration→syncstatus; missingverifier callback displays copyfallback; maliciousnotes renderastext; import/clear explicitly preservecloud; conflictchoicesrequired; originalexports stillwork.
+- [x] **Step 2:** Run with injectable localmockWorker on nonproductionURL; capture failures from unimplementedcontrols.
+- [x] **Step 3:** Integrate client/UI without refactoring medicalviews; only privacycopy reflects cloudopt-in. Add V1.1asset/cacheversion; ensure no secrets in config or HTML.
+- [x] **Step 4:** Run `npm test` and browser flows at 320/375/390/420/430/768/1440px, including datecontrolbounds and chartcaptiongaps. Verify offlineassets, unchangedmedicaloutputs, savedlogs/medchecks and JSON/CSV/encryptedroundtrip; screenshots outsidegit.
+- [x] **Step 5:** Commit `feat: expose opt-in cloud sync and safe migration in existing PWA`.
 
 ## Task 6: 非生产联调、安全审查与部署文档
 
 **Files:** Create `docs/cloud-sync-deploy.md`, `docs/cloud-sync-acceptance.md`, `.github/workflows/test.yml`; update `README.md`, `HANDOFF.md`.
 
-- [ ] **Step 1:** Create/check private `quit365-data` through authenticatedgh, verifyvisibility and Pagesdisabled; seed only documentation or synthetictestdata, never existinguserdata. Do not use broad CLI token as Workersecret.
-- [ ] **Step 2:** Run complete node/Worker/runtime/browser suite. Conduct independent review against approvedspec and ReviewFocus; fix findings with failingregressiontests. Record actualchecks and remaininglimits, including same-originPages trust and Gitplaintext history.
-- [ ] **Step 3:** Write exactmanual GitHubOAuthApp, minimumPAT, Cloudflarebinding/Secret and nonproductionWorker configsteps; distinguishpublicconfig fromSecrets; rotation/emergencyrevoke, storagecost/quotas, backupbeforemigration, restore/rollback and no-Pagesdatarepo instructions. Never askuser topasteSecrets intochat.
+- [x] **Step 1:** Create/check private `quit365-data` through authenticatedgh, verifyvisibility and Pagesdisabled; seed only documentation or synthetictestdata, never existinguserdata. Do not use broad CLI token as Workersecret.
+- [x] **Step 2:** Run complete node/Worker/runtime/browser suite. Conduct independent review against approvedspec and ReviewFocus; fix findings with failingregressiontests. Record actualchecks and remaininglimits, including same-originPages trust and Gitplaintext history.
+- [x] **Step 3:** Write exactmanual GitHubOAuthApp, minimumPAT, Cloudflarebinding/Secret and nonproductionWorker configsteps; distinguishpublicconfig fromSecrets; rotation/emergencyrevoke, storagecost/quotas, backupbeforemigration, restore/rollback and no-Pagesdatarepo instructions. Never askuser topasteSecrets intochat.
 - [ ] **Step 4:** With user-provided accountauthorization, test actualOAuth/Worker/privateGit CAS in nonproduction, then physicaliPhoneSafari/PWA and desktopcrossdevice. If unavailable, record explicit pendingcells; keepoverallgoal unachieved rather than invent results.
-- [ ] **Step 5:** Verify no productionchanges and no personaldata/secrets in git/workerdartifacts; commit docs/CI and onlytestedfixes.
+- [x] **Step 5:** Verify no productionchanges and no personaldata/secrets in git/workerdartifacts; commit docs/CI and onlytestedfixes.
 
 ## Task 7: PR与逐项交付审计
 
-- [ ] **Step 1:** `npm test`, Workerbundle/runtimechecks, browserregressions, `git diff --check`, secret/filelistreview, then inspectfinaldiff against everyrow in spec evidenceledger.
+- [x] **Step 1:** `npm test`, Workerbundle/runtimechecks, browserregressions, `git diff --check`, secret/filelistreview, then inspectfinaldiff against everyrow in spec evidenceledger.
 - [ ] **Step 2:** Push only `feature/cloud-sync-v1.1`, createPR to main with problem/behavior/securitychoices/testevidence and explicit pending realaccount/truedevicechecks. Do not merge. AttachPR tothischat with `attach_artifact`.
 - [ ] **Step 3:** Give userPR/source links, Worker/datarepo instructions, crossdevicetestresults, migration/rollback and securityreport. If manualcloud authorization/physicaltest stillpending, reportexactnextactions and keepgoalopen; do not claim livecloudsync exists.
 
