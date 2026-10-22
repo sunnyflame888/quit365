@@ -1,0 +1,16 @@
+# Local dependencies and OS files
+node_modules/
+.DS_Store
+
+# Never publish secrets, personal exports or browser test data
+.env
+.env.*
+*.pem
+*.key
+*backup*.json
+*encrypted*.json
+quit365-logs-*.csv
+backups/
+private/
+playwright-report/
+test-results/

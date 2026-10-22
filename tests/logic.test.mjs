@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {initialState,addDays,daysBetween,prescribedDose,streak,summaryStats,defaultLog,exportCsv,validateState,protocolDay} from '../src/logic.js';
+const state=initialState();
+const dose=date=>prescribedDose(date,state.settings);
+test('12 weeks and schedule dates',()=>{assert.equal(addDays('2026-10-22',83),'2027-01-13');assert.equal(daysBetween('2026-10-22','2026-10-29'),7);assert.equal(protocolDay('2026-10-29',state.settings),8);});
+test('standard dose progression',()=>{assert.deepEqual([dose('2026-10-22').am,dose('2026-10-22').pm],[.5,0]);assert.deepEqual([dose('2026-10-25').am,dose('2026-10-25').pm],[.5,.5]);assert.deepEqual([dose('2026-10-29').am,dose('2026-10-29').pm],[1,1]);assert.equal(dose('2027-01-13').stage,'maintenance');assert.equal(dose('2027-01-14').stage,'finished');});
+test('unrecorded days do not count as abstinence',()=>{const logs={};assert.equal(streak(logs,state.settings,'2026-10-30'),0);logs['2026-10-29']={...defaultLog('2026-10-29'),complete:true};assert.equal(streak(logs,state.settings,'2026-10-29'),1);assert.equal(streak(logs,state.settings,'2026-10-30'),1);logs['2026-10-30']={...defaultLog('2026-10-30'),complete:true,iqos:1};assert.equal(streak(logs,state.settings,'2026-10-30'),0);});
+test('doses only computed from completed logs',()=>{const logs={'2026-10-29':{...defaultLog('2026-10-29'),complete:true,medAm:true,medPm:false}};const stats=summaryStats(logs,state.settings,'2026-10-29');assert.equal(stats.medDoses.done,1);assert.equal(stats.medDoses.total,2);assert.equal(stats.zeroDays,1);});
+test('verified dose overrides effective from date',()=>{const clone=initialState();clone.settings.overrides=[{effectiveDate:'2026-11-01',am:.5,pm:.5,reason:'医嘱'}];assert.equal(prescribedDose('2026-10-30',clone.settings).am,1);assert.equal(prescribedDose('2026-11-02',clone.settings).pm,.5);});
+test('CSV blocks formula injection and escapes quotes',()=>{const l=defaultLog('2026-10-29');l.notes='=HYPERLINK("x")';const csv=exportCsv({[l.date]:l});assert.match(csv,/'=HYPERLINK/);assert.match(csv,/""x""/);});
+test('backup validates dates',()=>{assert.equal(validateState(initialState()).schemaVersion,1);assert.throws(()=>validateState({...initialState(),settings:{startDate:'2026-02-30',quitDate:'2026-10-29'}}));});
